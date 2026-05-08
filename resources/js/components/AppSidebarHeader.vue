@@ -62,10 +62,79 @@ const firstName = computed(() => {
 
             <!-- Right: Notification + Avatar -->
             <div class="app-header-right">
-                <button class="app-header-notif-btn">
-                    <Bell class="h-5 w-5" />
-                    <span class="app-header-notif-dot"></span>
-                </button>
+                <DropdownMenu>
+                    <DropdownMenuTrigger :as-child="true">
+                        <button class="app-header-notif-btn outline-none focus:outline-none">
+                            <Bell class="h-5 w-5" />
+                            <span class="app-header-notif-dot"></span>
+                        </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" class="w-80 md:w-[350px] rounded-2xl p-4 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-md shadow-2xl border border-gray-100 dark:border-zinc-800 space-y-3">
+                        <div class="flex items-center justify-between pb-2 border-b border-gray-50 dark:border-zinc-800/50">
+                            <h4 class="text-xs font-black uppercase tracking-wider text-gray-900 dark:text-white">Notifikasi Keluarga</h4>
+                            <span class="text-[9px] font-bold bg-rose-500/10 text-rose-600 px-2.5 py-0.5 rounded-full">4 Notif</span>
+                        </div>
+                        
+                        <div class="space-y-3 max-h-[350px] overflow-y-auto">
+                            <!-- Daily Charity (Sedekah) Reminder -->
+                            <div class="flex gap-3 p-3 rounded-2xl bg-violet-500/10 border border-violet-500/20 hover:bg-violet-500/15 transition relative overflow-hidden group">
+                                <div class="absolute -right-4 -bottom-4 w-12 h-12 bg-violet-500/10 rounded-full blur-xl pointer-events-none transition group-hover:scale-125"></div>
+                                <div class="w-8 h-8 rounded-lg bg-violet-500/20 text-violet-600 dark:text-violet-400 flex items-center justify-center shrink-0 text-xs font-bold animate-pulse">
+                                    🕌
+                                </div>
+                                <div class="space-y-1 flex-1 text-left relative z-10">
+                                    <div class="flex items-center gap-1.5">
+                                        <p class="text-xs font-black text-violet-700 dark:text-violet-400">Pengingat Sedekah Harian</p>
+                                        <span class="text-[7px] font-extrabold bg-violet-500 text-white px-1 py-0.2 rounded-md uppercase tracking-wider">Berkah</span>
+                                    </div>
+                                    <p class="text-[10px] text-gray-700 dark:text-gray-300 font-extrabold leading-relaxed italic">
+                                        "Sedekah itu tidak akan mengurangi harta." (HR. Muslim)
+                                    </p>
+                                    <p class="text-[9px] text-gray-500 dark:text-gray-400 font-medium leading-relaxed mt-1">
+                                        Yuk, raih keberkahan finansial keluarga hari ini dengan berbagi kepada sesama.
+                                    </p>
+                                    <p class="text-[8px] text-violet-500 dark:text-violet-400 font-bold">Setiap Hari ✨</p>
+                                </div>
+                            </div>
+
+                            <!-- Notif 1 -->
+                            <div class="flex gap-3 p-2 rounded-xl hover:bg-gray-50 dark:hover:bg-zinc-800/40 transition">
+                                <div class="w-8 h-8 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0 text-xs font-bold">
+                                    ⚠️
+                                </div>
+                                <div class="space-y-0.5 flex-1 text-left">
+                                    <p class="text-xs font-black text-gray-900 dark:text-white">Batas Anggaran Kritis!</p>
+                                    <p class="text-[10px] text-gray-500 dark:text-gray-400 font-medium leading-relaxed">Kategori <strong>Makanan</strong> Anda telah mencapai 75% pemakaian batas bulanan.</p>
+                                    <p class="text-[8px] text-gray-400 dark:text-zinc-500 font-bold">1 jam yang lalu</p>
+                                </div>
+                            </div>
+
+                            <!-- Notif 2 -->
+                            <div class="flex gap-3 p-2 rounded-xl hover:bg-gray-50 dark:hover:bg-zinc-800/40 transition">
+                                <div class="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0 text-xs font-bold">
+                                    📈
+                                </div>
+                                <div class="space-y-0.5 flex-1 text-left">
+                                    <p class="text-xs font-black text-gray-900 dark:text-white">Rasio Arus Kas Bulanan</p>
+                                    <p class="text-[10px] text-gray-500 dark:text-gray-400 font-medium leading-relaxed">Kondisi keuangan keluarga Anda saat ini berkategori <strong>Cukup Sehat</strong> (62% terpakai).</p>
+                                    <p class="text-[8px] text-gray-400 dark:text-zinc-500 font-bold">5 jam yang lalu</p>
+                                </div>
+                            </div>
+
+                            <!-- Notif 3 -->
+                            <div class="flex gap-3 p-2 rounded-xl hover:bg-gray-50 dark:hover:bg-zinc-800/40 transition">
+                                <div class="w-8 h-8 rounded-lg bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0 text-xs font-bold">
+                                    💰
+                                </div>
+                                <div class="space-y-0.5 flex-1 text-left">
+                                    <p class="text-xs font-black text-gray-900 dark:text-white">Pemasukan Terdaftar</p>
+                                    <p class="text-[10px] text-gray-500 dark:text-gray-400 font-medium leading-relaxed">Pemasukan sebesar <strong>Rp 15.000.000</strong> berhasil ditambahkan ke Dompet Utama oleh keluarga.</p>
+                                    <p class="text-[8px] text-gray-400 dark:text-zinc-500 font-bold">1 hari yang lalu</p>
+                                </div>
+                            </div>
+                        </div>
+                    </DropdownMenuContent>
+                </DropdownMenu>
 
                 <DropdownMenu>
                     <DropdownMenuTrigger :as-child="true">
