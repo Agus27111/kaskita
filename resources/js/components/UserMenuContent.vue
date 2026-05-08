@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Link, router } from '@inertiajs/vue3';
+import { Link } from '@inertiajs/vue3';
 import { LogOut, Settings } from 'lucide-vue-next';
 import {
     DropdownMenuGroup,
@@ -14,10 +14,6 @@ import type { User } from '@/types';
 
 type Props = {
     user: User;
-};
-
-const handleLogout = () => {
-    router.flushAll();
 };
 
 defineProps<Props>();
@@ -42,8 +38,8 @@ defineProps<Props>();
     <DropdownMenuItem :as-child="true">
         <Link
             class="block w-full cursor-pointer"
-            :href="logout()"
-            @click="handleLogout"
+            :href="logout().url"
+            method="post"
             as="button"
             data-test="logout-button"
         >
