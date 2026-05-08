@@ -1,9 +1,5 @@
 <script setup lang="ts">
 import { Head, Link, useForm } from '@inertiajs/vue3';
-import { dashboard } from '@/routes';
-import AppLayout from '@/layouts/AppLayout.vue';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import {
     Wallet as WalletIcon,
     ArrowUpRight,
@@ -11,17 +7,17 @@ import {
     Plus,
     History,
     TrendingUp,
-    CreditCard,
-    ChevronRight,
     Eye,
     EyeOff,
     Sparkles,
-    Coins,
     X,
-    Check,
     Trash2,
 } from 'lucide-vue-next';
 import { ref, computed, onMounted } from 'vue';
+import { Button } from '@/components/ui/button';
+
+import AppLayout from '@/layouts/AppLayout.vue';
+import { dashboard } from '@/routes';
 
 interface Wallet {
     id: number;
@@ -107,12 +103,14 @@ const openTransactionModal = (type: 'income' | 'expense' | 'transfer') => {
     
     if (props.wallets.length > 0) {
         transactionForm.wallet_id = props.wallets[0].id;
+
         if (type === 'transfer' && props.wallets.length > 1) {
             transactionForm.transfer_to_wallet_id = props.wallets[1].id;
         }
     }
     
     const matchingCats = props.categories.filter(c => c.type === type);
+
     if (matchingCats.length > 0) {
         transactionForm.category_id = matchingCats[0].id;
     } else {
@@ -141,9 +139,11 @@ const walletForm = useForm({
 
 const openWalletModal = () => {
     walletForm.reset();
+
     if (props.walletTypes.length > 0) {
         walletForm.type = props.walletTypes[0].name;
     }
+
     showWalletModal.value = true;
 };
 
@@ -181,7 +181,9 @@ const deleteWallet = (wallet: any) => {
     showConfirm(
         'Hapus Dompet?',
         `Apakah Anda yakin ingin menghapus dompet "${wallet.name}"? Saldo dompet ini akan ikut terhapus dari sistem.`,
-        () => { walletForm.delete(`/wallets/${wallet.id}`); }
+        () => {
+ walletForm.delete(`/wallets/${wallet.id}`); 
+}
     );
 };
 
@@ -195,6 +197,7 @@ const submitWalletType = () => {
     walletTypeForm.post('/wallet-types', {
         onSuccess: () => {
             walletTypeForm.reset();
+
             if (props.walletTypes.length > 0) {
                 walletForm.type = props.walletTypes[0].name;
             }
@@ -206,7 +209,9 @@ const deleteWalletType = (type: any) => {
     showConfirm(
         'Hapus Jenis Dompet?',
         `Apakah Anda yakin ingin menghapus jenis dompet "${type.name}"? Jenis ini tidak akan tersedia lagi untuk dompet baru.`,
-        () => { walletTypeForm.delete(`/wallet-types/${type.id}`); }
+        () => {
+ walletTypeForm.delete(`/wallet-types/${type.id}`); 
+}
     );
 };
 
@@ -221,6 +226,7 @@ const getWalletEmoji = (type: string) => {
         'ewallet': '📱',
         'investment': '📈',
     };
+
     return props.walletTypes.find(t => t.name === type)?.icon || defaults[type] || '💰';
 };
 
@@ -240,16 +246,14 @@ const formatDate = (dateString: string) => {
 };
 
 const maskedBalance = (value: number) => {
-    if (!showBalance.value) return '•••••••';
+    if (!showBalance.value) {
+return '•••••••';
+}
+
     return formatCurrency(value);
 };
 
-const walletIcons: Record<string, string> = {
-    bank: '🏦',
-    cash: '💵',
-    ewallet: '📱',
-    investment: '📈',
-};
+
 
 const activeChartTab = ref<'cashflow' | 'categories' | 'ai'>('cashflow');
 
@@ -274,8 +278,10 @@ const weeklyChartData = computed(() => {
     props.recentTransactions.forEach(t => {
         const tDate = t.date;
         const day = days.find(d => d.date === tDate);
+
         if (day) {
             const amt = parseFloat(t.amount);
+
             if (t.type === 'income') {
                 day.income += amt;
             } else if (t.type === 'expense') {
@@ -286,8 +292,13 @@ const weeklyChartData = computed(() => {
     
     let maxVal = 100000;
     days.forEach(d => {
-        if (d.income > maxVal) maxVal = d.income;
-        if (d.expense > maxVal) maxVal = d.expense;
+        if (d.income > maxVal) {
+maxVal = d.income;
+}
+
+        if (d.expense > maxVal) {
+maxVal = d.expense;
+}
     });
     
     return days.map(d => ({
@@ -301,7 +312,9 @@ const donutChartSegments = computed(() => {
     let accumulatedPercentage = 0;
     const totalSpent = props.budgets.reduce((sum, b) => sum + b.spent, 0);
     
-    if (totalSpent === 0) return [];
+    if (totalSpent === 0) {
+return [];
+}
     
     return props.budgets.map(b => {
         const percentage = (b.spent / totalSpent) * 100;
@@ -360,6 +373,7 @@ const financialInsights = computed(() => {
 
     let peakDayIndex = -1;
     let peakDayAmount = 0;
+
     for (let i = 0; i < 7; i++) {
         if (spendingByDay[i] > peakDayAmount) {
             peakDayAmount = spendingByDay[i];
@@ -401,6 +415,7 @@ const showOnboardingGuide = ref(true);
 
 const dismissOnboarding = () => {
     showOnboardingGuide.value = false;
+
     if (typeof window !== 'undefined') {
         localStorage.setItem('kaskita_dismissed_onboarding', 'true');
     }
@@ -409,12 +424,14 @@ const dismissOnboarding = () => {
 onMounted(() => {
     if (typeof window !== 'undefined') {
         const dismissed = localStorage.getItem('kaskita_dismissed_onboarding');
+
         if (dismissed === 'true') {
             showOnboardingGuide.value = false;
         }
 
         const urlParams = new URLSearchParams(window.location.search);
         const action = urlParams.get('action');
+
         if (action === 'income' || action === 'expense' || action === 'transfer') {
             openTransactionModal(action);
             const url = new URL(window.location.href);

@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { Head, useForm, router } from '@inertiajs/vue3';
-import AppLayout from '@/layouts/AppLayout.vue';
-import { ref, computed } from 'vue';
 import {
-    Coins, Plus, TrendingUp, TrendingDown, AlertTriangle,
-    ChevronDown, X, Pencil, Trash2, Check, Target,
+    Plus, TrendingUp, TrendingDown, AlertTriangle,
+    X, Pencil, Trash2, Check, Target,
 } from 'lucide-vue-next';
+import { ref, computed } from 'vue';
+import AppLayout from '@/layouts/AppLayout.vue';
 
 interface Category {
     id: number;
@@ -76,15 +76,28 @@ const statusLabel: Record<string, string> = {
 };
 
 const overallPct = computed(() => {
-    if (props.summary.total_budget === 0) return 0;
+    if (props.summary.total_budget === 0) {
+return 0;
+}
+
     return Math.min(100, Math.round((props.summary.total_spent / props.summary.total_budget) * 100));
 });
 
 const overallStatus = computed(() => {
     const p = overallPct.value;
-    if (p > 100) return 'over';
-    if (p >= 80) return 'danger';
-    if (p >= 60) return 'warning';
+
+    if (p > 100) {
+return 'over';
+}
+
+    if (p >= 80) {
+return 'danger';
+}
+
+    if (p >= 60) {
+return 'warning';
+}
+
     return 'safe';
 });
 
@@ -93,12 +106,16 @@ const usedCategories = computed(() => {
         ...props.monthlyBudgets.map(b => b.category_id),
         ...props.weeklyBudgets.map(b => b.category_id),
     ]);
+
     return ids;
 });
 
 const availableCategories = computed(() =>
     props.categories.filter(c => {
-        if (editingBudget.value) return true;
+        if (editingBudget.value) {
+return true;
+}
+
         return !usedCategories.value.has(c.id);
     })
 );
@@ -122,11 +139,15 @@ function openEdit(budget: BudgetItem) {
 function submit() {
     if (editingBudget.value) {
         form.put(`/budget/${editingBudget.value.id}`, {
-            onSuccess: () => { showModal.value = false; form.reset(); },
+            onSuccess: () => {
+ showModal.value = false; form.reset(); 
+},
         });
     } else {
         form.post('/budget', {
-            onSuccess: () => { showModal.value = false; form.reset(); },
+            onSuccess: () => {
+ showModal.value = false; form.reset(); 
+},
         });
     }
 }
@@ -156,7 +177,9 @@ function deleteBudget(id: number) {
     showConfirm(
         'Hapus Rencana Budget?',
         'Apakah Anda yakin ingin menghapus rencana budget ini? Tindakan ini tidak dapat dibatalkan.',
-        () => { router.delete(`/budget/${id}`); }
+        () => {
+ router.delete(`/budget/${id}`); 
+}
     );
 }
 
@@ -166,7 +189,9 @@ function deleteCategory(category: Category) {
     showConfirm(
         'Hapus Kategori?',
         `Apakah Anda yakin ingin menghapus kategori "${category.name}"? Semua rencana budget yang terhubung dengan kategori ini akan ikut terhapus dari sistem.`,
-        () => { router.delete(`/categories/${category.id}`); }
+        () => {
+ router.delete(`/categories/${category.id}`); 
+}
     );
 }
 </script>

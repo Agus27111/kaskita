@@ -1,6 +1,6 @@
-import { createApp, h } from 'vue'
 import { createInertiaApp } from '@inertiajs/vue3'
 import { createPinia } from 'pinia'
+import { createApp, h } from 'vue'
 
 const appName = import.meta.env.VITE_APP_NAME || 'KasKita'
 
@@ -9,6 +9,7 @@ createInertiaApp({
 
     resolve: name => {
         const pages = import.meta.glob(['./Pages/**/*.vue', './pages/**/*.vue'], { eager: true })
+
         return pages[`./Pages/${name}.vue`] || pages[`./pages/${name}.vue`]
     },
 

@@ -1,20 +1,19 @@
 <script setup lang="ts">
 import { Link } from '@inertiajs/vue3';
-import { ref } from 'vue';
 import {
     LayoutGrid,
     Coins,
     Plus,
-    X,
     ArrowUpRight,
     ArrowDownRight,
     ArrowLeftRight,
     History,
     Users,
 } from 'lucide-vue-next';
+import { ref } from 'vue';
 import { useCurrentUrl } from '@/composables/useCurrentUrl';
-import { dashboard } from '@/routes';
 import { toUrl } from '@/lib/utils';
+import { dashboard } from '@/routes';
 
 const { isCurrentUrl } = useCurrentUrl();
 const showQuickMenu = ref(false);

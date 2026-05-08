@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { usePage } from '@inertiajs/vue3';
+import { Bell } from 'lucide-vue-next';
 import { computed } from 'vue';
 import Breadcrumbs from '@/components/Breadcrumbs.vue';
-import { SidebarTrigger } from '@/components/ui/sidebar';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import {
@@ -10,12 +10,12 @@ import {
     DropdownMenuContent,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { SidebarTrigger } from '@/components/ui/sidebar';
 import UserMenuContent from '@/components/UserMenuContent.vue';
 import { getInitials } from '@/composables/useInitials';
 import type { BreadcrumbItem } from '@/types';
-import { Bell } from 'lucide-vue-next';
 
-const props = withDefaults(
+withDefaults(
     defineProps<{
         breadcrumbs?: BreadcrumbItem[];
     }>(),
@@ -29,14 +29,25 @@ const auth = computed(() => page.props.auth);
 
 const greeting = computed(() => {
     const hour = new Date().getHours();
-    if (hour < 11) return 'Selamat Pagi';
-    if (hour < 15) return 'Selamat Siang';
-    if (hour < 18) return 'Selamat Sore';
+
+    if (hour < 11) {
+return 'Selamat Pagi';
+}
+
+    if (hour < 15) {
+return 'Selamat Siang';
+}
+
+    if (hour < 18) {
+return 'Selamat Sore';
+}
+
     return 'Selamat Malam';
 });
 
 const firstName = computed(() => {
     const name = auth.value?.user?.name || '';
+
     return name.split(' ')[0];
 });
 </script>

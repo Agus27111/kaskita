@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { Head, useForm, router } from '@inertiajs/vue3';
-import AppLayout from '@/layouts/AppLayout.vue';
 import { ref, computed } from 'vue';
+import AppLayout from '@/layouts/AppLayout.vue';
 
 interface Member {
     id: number;
@@ -34,7 +34,9 @@ const nameForm = useForm({ name: props.family.name });
 
 const saveName = () => {
     nameForm.put('/family', {
-        onSuccess: () => { editingName.value = false; },
+        onSuccess: () => {
+ editingName.value = false; 
+},
     });
 };
 
@@ -59,7 +61,9 @@ const confirmRemove = ref<Member | null>(null);
 
 const removeMember = (member: Member) => {
     router.delete(`/family/member/${member.id}`, {
-        onSuccess: () => { confirmRemove.value = null; },
+        onSuccess: () => {
+ confirmRemove.value = null; 
+},
     });
 };
 
@@ -100,23 +104,24 @@ const copied = ref(false);
 const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
     copied.value = true;
-    setTimeout(() => { copied.value = false; }, 2000);
+    setTimeout(() => {
+ copied.value = false; 
+}, 2000);
 };
 
 const whatsappShareUrl = computed(() => {
-    if (typeof window === 'undefined') return '#';
+    if (typeof window === 'undefined') {
+return '#';
+}
+
     const registerUrl = `${window.location.origin}/register`;
     const text = `Halo! Yuk bergabung ke grup keuangan keluarga kami "${props.family.name}" di KasKita. 😊\n\n` +
                  `1. Daftar akun baru di sini:\n👉 ${registerUrl}\n\n` +
                  `2. Lalu masukkan Kode Undangan berikut pada halaman Setup Keluarga:\n👉 ${props.family.invite_code}`;
+
     return `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
 });
 
-const inviteLink = computed(() => {
-    if (typeof window === 'undefined') return null;
-    
-    return `${window.location.origin}/family/invitation/${props.family.invite_code}`;
-});
 </script>
 
 <template>

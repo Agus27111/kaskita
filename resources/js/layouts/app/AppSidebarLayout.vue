@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import { usePage } from '@inertiajs/vue3';
+import { Bell, X } from 'lucide-vue-next';
+import { watch, ref } from 'vue';
 import AppContent from '@/components/AppContent.vue';
 import AppShell from '@/components/AppShell.vue';
 import AppSidebar from '@/components/AppSidebar.vue';
@@ -6,9 +9,6 @@ import AppSidebarHeader from '@/components/AppSidebarHeader.vue';
 import BottomNav from '@/components/BottomNav.vue';
 import { Toaster } from '@/components/ui/sonner';
 import type { BreadcrumbItem } from '@/types';
-import { usePage } from '@inertiajs/vue3';
-import { watch, ref } from 'vue';
-import { Bell, X } from 'lucide-vue-next';
 
 type Props = {
     breadcrumbs?: BreadcrumbItem[];

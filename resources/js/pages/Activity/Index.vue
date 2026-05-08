@@ -1,11 +1,10 @@
 <script setup lang="ts">
 import { Head, Link, router } from '@inertiajs/vue3';
-import AppLayout from '@/layouts/AppLayout.vue';
-import { ref, watch, computed } from 'vue';
 import {
-    History, TrendingUp, TrendingDown, Filter, ChevronLeft, ChevronRight,
-    User as UserIcon, Calendar, Tag, Wallet, RefreshCw, X, ArrowLeftRight, Download
+    History, TrendingUp, TrendingDown, Filter, Calendar, Tag, Wallet, RefreshCw, X, ArrowLeftRight, Download
 } from 'lucide-vue-next';
+import { ref, watch, computed } from 'vue';
+import AppLayout from '@/layouts/AppLayout.vue';
 
 interface TransactionItem {
     id: number;
@@ -66,13 +65,18 @@ const formatCurrency = (v: number) =>
 
 const formatDate = (dateStr: string) => {
     const d = new Date(dateStr);
+
     return new Intl.DateTimeFormat('id-ID', { dateStyle: 'medium' }).format(d);
 };
 
 // Compute dynamic role badge label
 const getMemberLabel = (member: { name: string; role: string | null }) => {
-    if (!member.role) return member.name;
+    if (!member.role) {
+return member.name;
+}
+
     const roleCapitalized = member.role.charAt(0).toUpperCase() + member.role.slice(1);
+
     return `${roleCapitalized} (${member.name})`;
 };
 
@@ -104,11 +108,26 @@ watch([filterType, filterCategory, filterUser, filterMonth, filterYear], () => {
 const downloadPdf = () => {
     isDownloading.value = true;
     const params = new URLSearchParams();
-    if (filterType.value) params.append('type', filterType.value);
-    if (filterCategory.value) params.append('category_id', filterCategory.value);
-    if (filterUser.value) params.append('user_id', filterUser.value);
-    if (filterMonth.value) params.append('month', filterMonth.value);
-    if (filterYear.value) params.append('year', filterYear.value);
+
+    if (filterType.value) {
+params.append('type', filterType.value);
+}
+
+    if (filterCategory.value) {
+params.append('category_id', filterCategory.value);
+}
+
+    if (filterUser.value) {
+params.append('user_id', filterUser.value);
+}
+
+    if (filterMonth.value) {
+params.append('month', filterMonth.value);
+}
+
+    if (filterYear.value) {
+params.append('year', filterYear.value);
+}
 
     // Direct browser navigation starts file download attachment flow smoothly
     window.location.href = `/activity/download-pdf?${params.toString()}`;
@@ -298,8 +317,9 @@ const downloadPdf = () => {
                                 link.active && 'pagination-link--active',
                                 !link.url && 'pagination-link--disabled'
                             ]"
-                            v-html="link.label"
-                        />
+                        >
+                            <span v-html="link.label"></span>
+                        </Link>
                     </div>
                 </div>
 
