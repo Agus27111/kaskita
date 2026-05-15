@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\Transaction;
 use App\Models\Wallet;
+use App\Models\Category;
+use App\Services\VoiceParserService;
 use Illuminate\Http\Request;
 
 class TransactionController extends Controller
@@ -79,5 +81,22 @@ class TransactionController extends Controller
         ]);
 
         return back()->with('success', $msg);
+    }
+
+    /**
+     * Parse voice input text into structured transaction data.
+     */
+    public function parseVoice(Request $request, VoiceParserService $service)
+    {
+        $validated = $request->validate([
+            'text' => 'required|string|max:500',
+        ]);
+
+        // Family scope is automatically applied by Category global scope
+        $categories = Category::get(['id', 'name', 'type'])->toArray();
+
+        $result = $service->parse($validated['text'], $categories);
+
+        return response()->json($result);
     }
 }

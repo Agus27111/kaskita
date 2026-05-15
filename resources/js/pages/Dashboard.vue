@@ -12,6 +12,8 @@ import {
     Sparkles,
     X,
     Trash2,
+    Mic,
+    MicOff,
 } from 'lucide-vue-next';
 import { ref, computed, onMounted } from 'vue';
 import { Button } from '@/components/ui/button';
@@ -118,6 +120,97 @@ const openTransactionModal = (type: 'income' | 'expense' | 'transfer') => {
     }
 
     showTransactionModal.value = true;
+};
+
+const isListening = ref(false);
+const isProcessingVoice = ref(false);
+const voiceTranscript = ref('');
+const voiceError = ref('');
+
+const SpeechRecognition = typeof window !== 'undefined' ? ((window as any).SpeechRecognition || (window as any).webkitSpeechRecognition) : null;
+let recognition: any = null;
+
+if (SpeechRecognition) {
+    recognition = new SpeechRecognition();
+    recognition.lang = 'id-ID';
+    recognition.continuous = false;
+    recognition.interimResults = false;
+
+    recognition.onstart = () => {
+        isListening.value = true;
+        voiceError.value = '';
+    };
+
+    recognition.onend = () => {
+        isListening.value = false;
+    };
+
+    recognition.onerror = (event: any) => {
+        console.error('Speech recognition error', event.error);
+        voiceError.value = 'Gagal merekam suara. Coba lagi atau izinkan akses mikrofon.';
+        isListening.value = false;
+    };
+
+    recognition.onresult = async (event: any) => {
+        const text = event.results[0][0].transcript;
+        voiceTranscript.value = text;
+        await handleVoiceParsed(text);
+    };
+}
+
+const toggleListening = () => {
+    if (!recognition) {
+        alert('Browser Anda tidak mendukung fitur perekaman suara secara native.');
+        return;
+    }
+
+    if (isListening.value) {
+        recognition.stop();
+    } else {
+        voiceTranscript.value = '';
+        voiceError.value = '';
+        recognition.start();
+    }
+};
+
+const handleVoiceParsed = async (text: string) => {
+    isProcessingVoice.value = true;
+    try {
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+        
+        const response = await fetch('/transactions/parse-voice', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'X-CSRF-TOKEN': csrfToken
+            },
+            body: JSON.stringify({ text })
+        });
+
+        if (!response.ok) throw new Error('Gagal menghubungi parser.');
+
+        const data = await response.json();
+        
+        if (data.amount) {
+            transactionForm.amount = data.amount;
+        }
+        if (data.note) {
+            transactionForm.note = data.note;
+        }
+        if (data.category_id) {
+            // Validasi apakah kategori yang ditemukan sesuai dengan tipe transaksi saat ini
+            const exists = props.categories.some(c => c.id === data.category_id && c.type === transactionModalType.value);
+            if (exists) {
+                transactionForm.category_id = data.category_id;
+            }
+        }
+    } catch (error) {
+        console.error('Error parsing voice', error);
+        voiceError.value = 'Gagal menganalisis suara. Coba gunakan bahasa yang lebih jelas.';
+    } finally {
+        isProcessingVoice.value = false;
+    }
 };
 
 const submitTransaction = () => {
@@ -976,6 +1069,53 @@ onMounted(() => {
                     </div>
 
                     <form @submit.prevent="submitTransaction" class="transaction-modal-form">
+                        <!-- Premium Voice Input Feature -->
+                        <div class="p-3.5 border rounded-2xl flex items-center gap-3.5 transition-all duration-300 ease-in-out"
+                            :class="[
+                                isListening ? 'bg-rose-50 border-rose-200 text-rose-900 shadow-inner shadow-rose-100/50 dark:bg-rose-950/20 dark:border-rose-900/40 dark:text-rose-200' : 
+                                isProcessingVoice ? 'bg-teal-50 border-teal-200 text-teal-900 animate-pulse dark:bg-teal-950/20 dark:border-teal-900/40 dark:text-teal-200' : 
+                                'bg-violet-50/50 border-violet-100 text-violet-900 dark:bg-zinc-900/50 dark:border-zinc-800 dark:text-zinc-300'
+                            ]"
+                        >
+                            <button 
+                                type="button" 
+                                @click="toggleListening"
+                                class="w-11 h-11 rounded-2xl shrink-0 flex items-center justify-center transition-all cursor-pointer duration-300"
+                                :class="[
+                                    isListening ? 'bg-rose-500 text-white shadow-lg shadow-rose-300 animate-pulse scale-105 border-none dark:shadow-rose-950' : 
+                                    isProcessingVoice ? 'bg-teal-500 text-white border-none' : 
+                                    'bg-gradient-to-br from-violet-600 to-indigo-600 text-white shadow hover:shadow-md hover:scale-[1.02] border-none'
+                                ]"
+                                :title="isListening ? 'Berhenti Merekam' : 'Catat Transaksi dengan Suara'"
+                            >
+                                <MicOff v-if="isListening" class="h-4.5 w-4.5" />
+                                <Mic v-else class="h-4.5 w-4.5" />
+                            </button>
+                            
+                            <div class="flex-1 overflow-hidden pr-1">
+                                <p class="text-xs font-black tracking-tight leading-none uppercase flex items-center gap-1.5"
+                                    :class="[
+                                        isListening ? 'text-rose-600 dark:text-rose-400' : 
+                                        isProcessingVoice ? 'text-teal-600 dark:text-teal-400' : 
+                                        'text-violet-600 dark:text-violet-400'
+                                    ]"
+                                >
+                                    <span v-if="isListening" class="flex h-2 w-2 rounded-full bg-rose-500 animate-ping"></span>
+                                    {{ isListening ? 'Mendengarkan...' : (isProcessingVoice ? 'Menganalisis...' : '⚡ Pintasan Suara Cepat') }}
+                                </p>
+                                
+                                <p class="text-[11px] font-semibold leading-tight truncate mt-1 text-gray-600 dark:text-gray-400"
+                                    :class="{'italic font-bold text-gray-800 dark:text-gray-100': voiceTranscript && !isListening && !isProcessingVoice}"
+                                >
+                                    {{ isListening ? 'Katakan misal: "Makan bakso 25 ribu"' : (voiceTranscript ? `"${voiceTranscript}"` : 'Klik tombol mic untuk mendiktekan transaksi!') }}
+                                </p>
+                                
+                                <p v-if="voiceError" class="text-[10px] text-rose-600 dark:text-rose-400 font-bold mt-0.5 leading-none">
+                                    ⚠️ {{ voiceError }}
+                                </p>
+                            </div>
+                        </div>
+
                         <!-- Amount -->
                         <div class="transaction-form-group">
                             <label class="transaction-form-label">Jumlah (Rp)</label>

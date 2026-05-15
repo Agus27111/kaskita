@@ -11,6 +11,12 @@ return new class extends Migration
      */
     public function up(): void
     {
+        // Step 1: Create a temporary index to satisfy MySQL's Foreign Key requirement for family_id
+        Schema::table('budgets', function (Blueprint $table) {
+            $table->index('family_id', 'temp_family_id_idx');
+        });
+
+        // Step 2: Perform structural changes and swap unique indexes
         Schema::table('budgets', function (Blueprint $table) {
             // Add period type: monthly or weekly
             $table->enum('period', ['monthly', 'weekly'])->default('monthly')->after('amount');
@@ -32,6 +38,11 @@ return new class extends Migration
             $table->dropUnique(['family_id', 'category_id', 'month', 'year']);
             $table->unique(['family_id', 'category_id', 'period', 'month', 'year', 'week'], 'budgets_unique_period');
         });
+
+        // Step 3: Drop the temporary index as the new unique composite index starts with family_id and covers the foreign key
+        Schema::table('budgets', function (Blueprint $table) {
+            $table->dropIndex('temp_family_id_idx');
+        });
     }
 
     /**
@@ -39,12 +50,23 @@ return new class extends Migration
      */
     public function down(): void
     {
+        // Step 1: Create temporary index to support foreign key
+        Schema::table('budgets', function (Blueprint $table) {
+            $table->index('family_id', 'temp_family_id_idx');
+        });
+
+        // Step 2: Revert back to original unique index
         Schema::table('budgets', function (Blueprint $table) {
             $table->dropUnique('budgets_unique_period');
             $table->dropColumn(['period', 'week', 'is_recurring', 'note']);
             $table->tinyInteger('month')->nullable(false)->change();
             $table->smallInteger('year')->nullable(false)->change();
             $table->unique(['family_id', 'category_id', 'month', 'year']);
+        });
+
+        // Step 3: Drop temporary index
+        Schema::table('budgets', function (Blueprint $table) {
+            $table->dropIndex('temp_family_id_idx');
         });
     }
 };

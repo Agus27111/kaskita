@@ -34,6 +34,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
         // Transactions (Transaksi Baru)
         Route::post('transactions', [\App\Http\Controllers\TransactionController::class, 'store'])->name('transactions.store');
+        Route::post('transactions/parse-voice', [\App\Http\Controllers\TransactionController::class, 'parseVoice'])->name('transactions.parse-voice');
 
         // Wallets (Kelola Dompet)
         Route::post('wallets', [\App\Http\Controllers\WalletController::class, 'store'])->name('wallets.store');
