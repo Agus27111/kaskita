@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('family_id')->constrained()->cascadeOnDelete();
             $table->string('name');
-            $table->enum('type', ['cash', 'bank', 'ewallet']);
+            $table->string('type', 50);
             $table->decimal('balance', 15, 2)->default(0);
             $table->string('color')->default('#10b981');
             $table->string('icon')->nullable();

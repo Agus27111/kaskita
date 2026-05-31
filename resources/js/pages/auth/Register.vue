@@ -14,7 +14,10 @@ import { store } from '@/routes/register';
 </script>
 
 <template>
-    <AuthLayout title="Buat Akun Baru" description="Isi data diri Anda untuk mulai mengelola keuangan keluarga">
+    <AuthLayout
+        title="Buat Akun Baru"
+        description="Isi data diri Anda untuk mulai mengelola keuangan keluarga"
+    >
         <Head title="Daftar" />
 
         <Form
@@ -26,7 +29,9 @@ import { store } from '@/routes/register';
         >
             <div class="grid gap-4">
                 <div class="grid gap-2">
-                    <Label for="name" class="text-xs font-bold text-gray-500">NAMA LENGKAP</Label>
+                    <Label for="name" class="text-xs font-bold text-gray-500"
+                        >NAMA LENGKAP</Label
+                    >
                     <Input
                         id="name"
                         type="text"
@@ -42,7 +47,9 @@ import { store } from '@/routes/register';
                 </div>
 
                 <div class="grid gap-2">
-                    <Label for="email" class="text-xs font-bold text-gray-500">EMAIL</Label>
+                    <Label for="email" class="text-xs font-bold text-gray-500"
+                        >EMAIL</Label
+                    >
                     <Input
                         id="email"
                         type="email"
@@ -57,7 +64,11 @@ import { store } from '@/routes/register';
                 </div>
 
                 <div class="grid gap-2">
-                    <Label for="password" class="text-xs font-bold text-gray-500">PASSWORD</Label>
+                    <Label
+                        for="password"
+                        class="text-xs font-bold text-gray-500"
+                        >PASSWORD</Label
+                    >
                     <PasswordInput
                         id="password"
                         required
@@ -71,7 +82,11 @@ import { store } from '@/routes/register';
                 </div>
 
                 <div class="grid gap-2">
-                    <Label for="password_confirmation" class="text-xs font-bold text-gray-500">KONFIRMASI PASSWORD</Label>
+                    <Label
+                        for="password_confirmation"
+                        class="text-xs font-bold text-gray-500"
+                        >KONFIRMASI PASSWORD</Label
+                    >
                     <PasswordInput
                         id="password_confirmation"
                         required
@@ -97,11 +112,13 @@ import { store } from '@/routes/register';
                 </Button>
             </div>
 
-            <div class="text-center text-xs text-gray-400 dark:text-gray-500 font-bold">
+            <div
+                class="text-center text-xs font-bold text-gray-400 dark:text-gray-500"
+            >
                 Sudah punya akun?
                 <TextLink
                     :href="login()"
-                    class="font-extrabold text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 ml-1"
+                    class="ml-1 font-extrabold text-emerald-600 hover:text-emerald-700 dark:text-emerald-400"
                     :tabindex="6"
                 >
                     Masuk di sini

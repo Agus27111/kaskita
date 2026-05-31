@@ -2,8 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Family;
+use App\Models\FamilyInvitation;
+use App\Models\User;
+use App\Models\Wallet;
 use App\Services\FamilyService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -45,7 +50,7 @@ class FamilyController extends Controller
         $user = $request->user();
         $family = $user->family;
 
-        if (!$family) {
+        if (! $family) {
             return redirect()->route('family.setup');
         }
 
@@ -53,7 +58,7 @@ class FamilyController extends Controller
             ->select('id', 'name', 'email', 'avatar', 'role', 'created_at')
             ->get();
 
-        $invitations = \App\Models\FamilyInvitation::where('family_id', $family->id)
+        $invitations = FamilyInvitation::where('family_id', $family->id)
             ->whereNull('accepted_at')
             ->where('expires_at', '>', now())
             ->orderBy('created_at', 'desc')
@@ -78,7 +83,7 @@ class FamilyController extends Controller
 
         $family = $request->user()->family;
 
-        if (!$family || $request->user()->role !== 'admin_keluarga') {
+        if (! $family || $request->user()->role !== 'admin_keluarga') {
             abort(403, 'Anda tidak memiliki akses.');
         }
 
@@ -99,7 +104,7 @@ class FamilyController extends Controller
 
         $family = $request->user()->family;
 
-        if (!$family || $request->user()->role !== 'admin_keluarga') {
+        if (! $family || $request->user()->role !== 'admin_keluarga') {
             abort(403, 'Anda tidak memiliki akses.');
         }
 
@@ -123,11 +128,11 @@ class FamilyController extends Controller
     {
         $family = $request->user()->family;
 
-        if (!$family || $request->user()->role !== 'admin_keluarga') {
+        if (! $family || $request->user()->role !== 'admin_keluarga') {
             abort(403);
         }
 
-        \App\Models\FamilyInvitation::where('id', $invitationId)
+        FamilyInvitation::where('id', $invitationId)
             ->where('family_id', $family->id)
             ->whereNull('accepted_at')
             ->delete();
@@ -142,15 +147,17 @@ class FamilyController extends Controller
     {
         $user = $request->user();
 
-        if (!$user) {
+        if (! $user) {
             // Simpan token di session, redirect ke login dulu
             session(['invitation_token' => $token]);
+
             return redirect()->route('login')
                 ->with('info', 'Silahkan login terlebih dahulu untuk menerima undangan.');
         }
 
         try {
             $family = $this->familyService->acceptInvitation($user, $token);
+
             return redirect()->route('dashboard')
                 ->with('success', "Selamat datang di keluarga \"{$family->name}\"! 🎉");
         } catch (\Exception $e) {
@@ -166,11 +173,11 @@ class FamilyController extends Controller
     {
         $family = $request->user()->family;
 
-        if (!$family || $request->user()->role !== 'admin_keluarga') {
+        if (! $family || $request->user()->role !== 'admin_keluarga') {
             abort(403);
         }
 
-        $member = \App\Models\User::findOrFail($memberId);
+        $member = User::findOrFail($memberId);
 
         // Admin tidak bisa mengeluarkan dirinya sendiri
         if ($member->id === $request->user()->id) {
@@ -179,6 +186,7 @@ class FamilyController extends Controller
 
         try {
             $this->familyService->removeMember($family, $member);
+
             return back()->with('success', "{$member->name} telah dikeluarkan dari keluarga.");
         } catch (\Exception $e) {
             return back()->withErrors(['member' => $e->getMessage()]);
@@ -192,12 +200,13 @@ class FamilyController extends Controller
     {
         $user = $request->user();
 
-        if (!$user->family_id) {
+        if (! $user->family_id) {
             return back()->with('error', 'Anda belum bergabung di keluarga manapun.');
         }
 
         try {
             $this->familyService->leaveFamily($user);
+
             return redirect()->route('family.setup')
                 ->with('success', 'Anda telah keluar dari keluarga.');
         } catch (\Exception $e) {
@@ -216,14 +225,15 @@ class FamilyController extends Controller
 
         $family = $request->user()->family;
 
-        if (!$family || $request->user()->role !== 'admin_keluarga') {
+        if (! $family || $request->user()->role !== 'admin_keluarga') {
             abort(403);
         }
 
-        $member = \App\Models\User::findOrFail($memberId);
+        $member = User::findOrFail($memberId);
 
         try {
             $this->familyService->changeRole($family, $member, $validated['role']);
+
             return back()->with('success', "Role {$member->name} berhasil diubah.");
         } catch (\Exception $e) {
             return back()->withErrors(['role' => $e->getMessage()]);
@@ -246,21 +256,21 @@ class FamilyController extends Controller
         }
 
         // Cari keluarga berdasarkan 6-digit invite_code
-        $family = \App\Models\Family::where('invite_code', strtoupper($validated['token']))->first();
+        $family = Family::where('invite_code', strtoupper($validated['token']))->first();
 
-        if (!$family) {
+        if (! $family) {
             return back()->withErrors(['token' => 'Kode token keluarga tidak valid. Silahkan periksa kembali.']);
         }
 
         try {
-            \Illuminate\Support\Facades\DB::transaction(function () use ($user, $family) {
+            DB::transaction(function () use ($user, $family) {
                 $user->update([
                     'family_id' => $family->id,
                     'role' => 'anggota',
                 ]);
 
                 // Set default wallet ke wallet pertama keluarga
-                $wallet = \App\Models\Wallet::withoutGlobalScopes()
+                $wallet = Wallet::withoutGlobalScopes()
                     ->where('family_id', $family->id)
                     ->where('is_active', true)
                     ->first();

@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Category extends Model
 {
-    use HasFactory, BelongsToFamily;
+    use BelongsToFamily, HasFactory;
 
     protected $fillable = [
         'family_id',

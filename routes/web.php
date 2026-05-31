@@ -1,6 +1,15 @@
 <?php
 
+use App\Http\Controllers\ActivityController;
+use App\Http\Controllers\Auth\GoogleController;
+use App\Http\Controllers\BudgetController;
+use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\FamilyController;
+use App\Http\Controllers\TransactionController;
+use App\Http\Controllers\WalletController;
+use App\Http\Controllers\WalletTypeController;
+use App\Http\Middleware\EnsureHasFamily;
 use Illuminate\Support\Facades\Route;
 use Laravel\Fortify\Features;
 
@@ -19,33 +28,33 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('family/join', [FamilyController::class, 'join'])->name('family.join');
 
     // Semua halaman di bawah ini butuh keluarga
-    Route::middleware(\App\Http\Middleware\EnsureHasFamily::class)->group(function () {
-        Route::get('dashboard', \App\Http\Controllers\DashboardController::class)->name('dashboard');
+    Route::middleware(EnsureHasFamily::class)->group(function () {
+        Route::get('dashboard', DashboardController::class)->name('dashboard');
 
         // Budget
-        Route::get('budget', [\App\Http\Controllers\BudgetController::class, 'index'])->name('budget.index');
-        Route::post('budget', [\App\Http\Controllers\BudgetController::class, 'store'])->name('budget.store');
-        Route::put('budget/{budget}', [\App\Http\Controllers\BudgetController::class, 'update'])->name('budget.update');
-        Route::delete('budget/{budget}', [\App\Http\Controllers\BudgetController::class, 'destroy'])->name('budget.destroy');
+        Route::get('budget', [BudgetController::class, 'index'])->name('budget.index');
+        Route::post('budget', [BudgetController::class, 'store'])->name('budget.store');
+        Route::put('budget/{budget}', [BudgetController::class, 'update'])->name('budget.update');
+        Route::delete('budget/{budget}', [BudgetController::class, 'destroy'])->name('budget.destroy');
 
         // Activity (Aktivitas)
-        Route::get('activity', [\App\Http\Controllers\ActivityController::class, 'index'])->name('activity.index');
-        Route::get('activity/download-pdf', [\App\Http\Controllers\ActivityController::class, 'downloadPdf'])->name('activity.download-pdf');
+        Route::get('activity', [ActivityController::class, 'index'])->name('activity.index');
+        Route::get('activity/download-pdf', [ActivityController::class, 'downloadPdf'])->name('activity.download-pdf');
 
         // Transactions (Transaksi Baru)
-        Route::post('transactions', [\App\Http\Controllers\TransactionController::class, 'store'])->name('transactions.store');
-        Route::post('transactions/parse-voice', [\App\Http\Controllers\TransactionController::class, 'parseVoice'])->name('transactions.parse-voice');
+        Route::post('transactions', [TransactionController::class, 'store'])->name('transactions.store');
+        Route::post('transactions/parse-voice', [TransactionController::class, 'parseVoice'])->name('transactions.parse-voice');
 
         // Wallets (Kelola Dompet)
-        Route::post('wallets', [\App\Http\Controllers\WalletController::class, 'store'])->name('wallets.store');
-        Route::delete('wallets/{wallet}', [\App\Http\Controllers\WalletController::class, 'destroy'])->name('wallets.destroy');
+        Route::post('wallets', [WalletController::class, 'store'])->name('wallets.store');
+        Route::delete('wallets/{wallet}', [WalletController::class, 'destroy'])->name('wallets.destroy');
 
         // Wallet Types (Kelola Jenis Dompet)
-        Route::post('wallet-types', [\App\Http\Controllers\WalletTypeController::class, 'store'])->name('wallet-types.store');
-        Route::delete('wallet-types/{walletType}', [\App\Http\Controllers\WalletTypeController::class, 'destroy'])->name('wallet-types.destroy');
+        Route::post('wallet-types', [WalletTypeController::class, 'store'])->name('wallet-types.store');
+        Route::delete('wallet-types/{walletType}', [WalletTypeController::class, 'destroy'])->name('wallet-types.destroy');
 
         // Categories (Kelola Kategori)
-        Route::delete('categories/{category}', [\App\Http\Controllers\CategoryController::class, 'destroy'])->name('categories.destroy');
+        Route::delete('categories/{category}', [CategoryController::class, 'destroy'])->name('categories.destroy');
 
         // Family Settings
         Route::get('family/settings', [FamilyController::class, 'settings'])->name('family.settings');
@@ -58,7 +67,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     });
 });
 
-Route::get('auth/google', [\App\Http\Controllers\Auth\GoogleController::class, 'redirectToGoogle'])->name('auth.google');
-Route::get('auth/google/callback', [\App\Http\Controllers\Auth\GoogleController::class, 'handleGoogleCallback']);
+Route::get('auth/google', [GoogleController::class, 'redirectToGoogle'])->name('auth.google');
+Route::get('auth/google/callback', [GoogleController::class, 'handleGoogleCallback']);
 
 require __DIR__.'/settings.php';

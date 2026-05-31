@@ -5,10 +5,11 @@ namespace App\Http\Controllers;
 use App\Models\Budget;
 use App\Models\Category;
 use App\Models\Transaction;
+use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
-use Barryvdh\DomPDF\Facade\Pdf;
 
 class ActivityController extends Controller
 {
@@ -29,9 +30,11 @@ class ActivityController extends Controller
             ->where('family_id', $family->id)
             ->when($type, fn ($q) => $q->where('type', $type))
             ->when($categoryId, fn ($q) => $q->where('category_id', $categoryId))
-            ->when($userId, fn ($q) => $q->where('user_id', $userId))
-            ->when($month, fn ($q) => $q->whereMonth('date', $month))
-            ->when($year, fn ($q) => $q->whereYear('date', $year))
+            ->when($userId, fn ($q) => $q->where('user_id', $userId));
+
+        $this->applyDateFilters($transactions, $month ? (int) $month : null, $year ? (int) $year : null);
+
+        $transactions = $transactions
             ->orderBy('date', 'desc')
             ->orderBy('id', 'desc')
             ->paginate(20)
@@ -77,7 +80,7 @@ class ActivityController extends Controller
                 ->distinct()
                 ->orderBy('year', 'desc')
                 ->pluck('year')
-                ->map(fn($y) => (int)$y)
+                ->map(fn ($y) => (int) $y)
                 ->filter()
                 ->toArray();
         } else {
@@ -87,7 +90,7 @@ class ActivityController extends Controller
                 ->distinct()
                 ->orderBy('year', 'desc')
                 ->pluck('year')
-                ->map(fn($y) => (int)$y)
+                ->map(fn ($y) => (int) $y)
                 ->filter()
                 ->toArray();
         }
@@ -107,7 +110,7 @@ class ActivityController extends Controller
                 'user_id' => $userId ?? '',
                 'month' => $month ?? '',
                 'year' => $year ?? '',
-            ]
+            ],
         ]);
     }
 
@@ -117,7 +120,7 @@ class ActivityController extends Controller
     public function downloadPdf(Request $request)
     {
         $family = $request->user()->family;
-        if (!$family) {
+        if (! $family) {
             return redirect()->route('family.setup');
         }
 
@@ -130,13 +133,13 @@ class ActivityController extends Controller
         // Query transactions - fully dynamic filtering
         $query = Transaction::with(['category', 'wallet', 'user'])
             ->where('family_id', $family->id)
-            ->when($month, fn ($q) => $q->whereMonth('date', $month))
-            ->when($year, fn ($q) => $q->whereYear('date', $year))
             ->when($type, fn ($q) => $q->where('type', $type))
             ->when($categoryId, fn ($q) => $q->where('category_id', $categoryId))
             ->when($userId, fn ($q) => $q->where('user_id', $userId))
             ->orderBy('date', 'asc')
             ->orderBy('id', 'asc');
+
+        $this->applyDateFilters($query, $month ? (int) $month : null, $year ? (int) $year : null);
 
         $transactions = $query->get();
 
@@ -150,14 +153,14 @@ class ActivityController extends Controller
         foreach ($transactions as $t) {
             $catName = $t->category?->name ?? 'Lainnya';
             $catType = $t->type; // expense / income / transfer
-            
-            if (!isset($categoryBreakdown[$catName])) {
+
+            if (! isset($categoryBreakdown[$catName])) {
                 $categoryBreakdown[$catName] = [
                     'name' => $catName,
                     'type' => $catType,
                     'color' => $t->category?->color ?? '#64748b',
                     'total' => 0,
-                    'count' => 0
+                    'count' => 0,
                 ];
             }
             $categoryBreakdown[$catName]['total'] += (float) $t->amount;
@@ -169,17 +172,17 @@ class ActivityController extends Controller
         foreach ($transactions as $t) {
             $uName = $t->user?->name ?? 'Sistem';
             $uRole = $t->user?->role ?? 'Anggota';
-            if (!isset($userBreakdown[$uName])) {
+            if (! isset($userBreakdown[$uName])) {
                 $userBreakdown[$uName] = [
                     'name' => $uName,
                     'role' => $uRole,
                     'income' => 0,
-                    'expense' => 0
+                    'expense' => 0,
                 ];
             }
             if ($t->type === 'income') {
                 $userBreakdown[$uName]['income'] += (float) $t->amount;
-            } else if ($t->type === 'expense') {
+            } elseif ($t->type === 'expense') {
                 $userBreakdown[$uName]['expense'] += (float) $t->amount;
             }
         }
@@ -194,38 +197,38 @@ class ActivityController extends Controller
 
         // Format month name in Indonesian
         $monthName = 'Semua Bulan';
-        if (!empty($month)) {
+        if (! empty($month)) {
             $monthsId = [
                 1 => 'Januari', 2 => 'Februari', 3 => 'Maret', 4 => 'April',
                 5 => 'Mei', 6 => 'Juni', 7 => 'Juli', 8 => 'Agustus',
-                9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Desember'
+                9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Desember',
             ];
-            $monthName = $monthsId[(int)$month] ?? date('F', mktime(0, 0, 0, $month, 10));
+            $monthName = $monthsId[(int) $month] ?? date('F', mktime(0, 0, 0, $month, 10));
         }
 
-        $yearLabel = !empty($year) ? $year : 'Semua Tahun';
+        $yearLabel = ! empty($year) ? $year : 'Semua Tahun';
 
         // Format data for JSON AI block
         $aiData = [
             'report_info' => [
                 'family_name' => $family->name,
-                'period' => $monthName . ($yearLabel !== 'Semua Tahun' ? " $yearLabel" : ""),
+                'period' => $monthName.($yearLabel !== 'Semua Tahun' ? " $yearLabel" : ''),
                 'generated_at' => now()->toIso8601String(),
             ],
             'financial_summary' => [
-                'total_income' => (float)$totalIncome,
-                'total_expense' => (float)$totalExpense,
-                'net_savings' => (float)$netSavings,
+                'total_income' => (float) $totalIncome,
+                'total_expense' => (float) $totalExpense,
+                'net_savings' => (float) $netSavings,
             ],
             'category_breakdown' => array_values($categoryBreakdown),
             'user_breakdown' => array_values($userBreakdown),
             'budgets' => $budgets->map(function ($b) {
                 return [
                     'category' => $b->category?->name ?? 'Lainnya',
-                    'limit_amount' => (float)$b->amount,
-                    'spent_amount' => (float)$b->spent,
-                    'remaining_amount' => (float)$b->remaining,
-                    'percentage_used' => (float)$b->percentage,
+                    'limit_amount' => (float) $b->amount,
+                    'spent_amount' => (float) $b->spent,
+                    'remaining_amount' => (float) $b->remaining,
+                    'percentage_used' => (float) $b->percentage,
                     'status' => $b->status,
                 ];
             })->all(),
@@ -238,9 +241,9 @@ class ActivityController extends Controller
                     'user' => $t->user?->name ?? 'Sistem',
                     'role' => $t->user?->role ?? '-',
                     'type' => $t->type,
-                    'amount' => (float)$t->amount,
+                    'amount' => (float) $t->amount,
                 ];
-            })->all()
+            })->all(),
         ];
 
         $pdf = Pdf::loadView('pdf.transactions', [
@@ -258,10 +261,30 @@ class ActivityController extends Controller
         ]);
 
         $safeFamilyName = strtolower(preg_replace('/[^a-zA-Z0-9]/', '_', $family->name));
-        $periodFileStr = strtolower(str_replace(' ', '_', $monthName)) . "_" . strtolower(str_replace(' ', '_', $yearLabel));
+        $periodFileStr = strtolower(str_replace(' ', '_', $monthName)).'_'.strtolower(str_replace(' ', '_', $yearLabel));
         $fileName = "kaskita_{$safeFamilyName}_transaksi_{$periodFileStr}.pdf";
 
         return $pdf->download($fileName);
     }
-}
 
+    private function applyDateFilters(Builder $query, ?int $month, ?int $year): Builder
+    {
+        if ($month && $year) {
+            $start = now()->setDate($year, $month, 1)->startOfMonth();
+
+            return $query->whereBetween('date', [$start->toDateString(), $start->endOfMonth()->toDateString()]);
+        }
+
+        if ($year) {
+            $start = now()->setDate($year, 1, 1)->startOfYear();
+
+            return $query->whereBetween('date', [$start->toDateString(), $start->endOfYear()->toDateString()]);
+        }
+
+        if ($month) {
+            return $query->whereMonth('date', $month);
+        }
+
+        return $query;
+    }
+}

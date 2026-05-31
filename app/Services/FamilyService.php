@@ -6,11 +6,22 @@ use App\Models\Family;
 use App\Models\FamilyInvitation;
 use App\Models\User;
 use App\Models\Wallet;
+use App\Models\WalletType;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 class FamilyService
 {
+    public static function defaultWalletTypes(): array
+    {
+        return [
+            ['name' => 'Rekening Bank', 'icon' => '🏦'],
+            ['name' => 'Uang Tunai (Cash)', 'icon' => '💵'],
+            ['name' => 'E-Wallet', 'icon' => '📱'],
+            ['name' => 'Investasi', 'icon' => '📈'],
+        ];
+    }
+
     /**
      * Buat keluarga baru + set user sebagai admin_keluarga + buat wallet default.
      */
@@ -48,8 +59,20 @@ class FamilyService
             // 4. Set wallet default untuk user
             $user->update(['default_wallet_id' => $wallet->id]);
 
+            $this->ensureDefaultWalletTypes($family);
+
             return $family;
         });
+    }
+
+    public function ensureDefaultWalletTypes(Family $family): void
+    {
+        foreach (self::defaultWalletTypes() as $walletType) {
+            WalletType::firstOrCreate(
+                ['family_id' => $family->id, 'name' => $walletType['name']],
+                ['icon' => $walletType['icon']]
+            );
+        }
     }
 
     /**

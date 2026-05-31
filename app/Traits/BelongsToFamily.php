@@ -10,7 +10,7 @@ trait BelongsToFamily
 {
     protected static function bootBelongsToFamily(): void
     {
-        static::addGlobalScope(new FamilyScope());
+        static::addGlobalScope(new FamilyScope);
 
         static::creating(function ($model) {
             if (auth()->check()) {

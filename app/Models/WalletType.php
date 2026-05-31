@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class WalletType extends Model
 {
-    use HasFactory, BelongsToFamily;
+    use BelongsToFamily, HasFactory;
 
     protected $fillable = [
         'family_id',

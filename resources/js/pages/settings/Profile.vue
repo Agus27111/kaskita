@@ -44,10 +44,14 @@ const user = computed(() => page.props.auth.user);
                     v-slot="{ errors, processing }"
                 >
                     <div class="grid gap-2">
-                        <Label for="name" class="text-xs font-bold text-gray-500">NAMA LENGKAP</Label>
+                        <Label
+                            for="name"
+                            class="text-xs font-bold text-gray-500"
+                            >NAMA LENGKAP</Label
+                        >
                         <Input
                             id="name"
-                            class="mt-1 block w-full bg-gray-50/50 dark:bg-zinc-800/50 border border-gray-200 dark:border-zinc-700 rounded-xl"
+                            class="mt-1 block w-full rounded-xl border border-gray-200 bg-gray-50/50 dark:border-zinc-700 dark:bg-zinc-800/50"
                             name="name"
                             :default-value="user.name"
                             required
@@ -58,11 +62,15 @@ const user = computed(() => page.props.auth.user);
                     </div>
 
                     <div class="grid gap-2">
-                        <Label for="email" class="text-xs font-bold text-gray-500">EMAIL ADDRESS</Label>
+                        <Label
+                            for="email"
+                            class="text-xs font-bold text-gray-500"
+                            >EMAIL ADDRESS</Label
+                        >
                         <Input
                             id="email"
                             type="email"
-                            class="mt-1 block w-full bg-gray-50/50 dark:bg-zinc-800/50 border border-gray-200 dark:border-zinc-700 rounded-xl"
+                            class="mt-1 block w-full rounded-xl border border-gray-200 bg-gray-50/50 dark:border-zinc-700 dark:bg-zinc-800/50"
                             name="email"
                             :default-value="user.email"
                             required
@@ -88,12 +96,16 @@ const user = computed(() => page.props.auth.user);
                             v-if="status === 'verification-link-sent'"
                             class="mt-2 text-sm font-medium text-green-600"
                         >
-                            A new verification link has been sent to your email address.
+                            A new verification link has been sent to your email
+                            address.
                         </div>
                     </div>
 
                     <div class="flex items-center gap-4">
-                        <Button :disabled="processing" data-test="update-profile-button" class="bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white font-bold px-6 py-2.5 rounded-xl transition cursor-pointer shadow-md shadow-emerald-500/10"
+                        <Button
+                            :disabled="processing"
+                            data-test="update-profile-button"
+                            class="cursor-pointer rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 px-6 py-2.5 font-bold text-white shadow-md shadow-emerald-500/10 transition hover:from-emerald-600 hover:to-teal-600"
                             >Save</Button
                         >
                     </div>

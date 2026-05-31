@@ -16,18 +16,18 @@ class DummyDataSeeder extends Seeder
     {
         $user = User::where('email', 'test@example.com')->first();
 
-        if (!$user) {
+        if (! $user) {
             return;
         }
 
         DB::transaction(function () use ($user) {
             // 1. Ensure Family exists
             $family = $user->family;
-            if (!$family) {
+            if (! $family) {
                 $family = Family::create(['name' => 'Keluarga Agus']);
                 $user->update([
                     'family_id' => $family->id,
-                    'role' => 'admin_keluarga'
+                    'role' => 'admin_keluarga',
                 ]);
             }
 

@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('family_id')->constrained()->cascadeOnDelete();
             $table->foreignId('wallet_id')->constrained()->cascadeOnDelete();
-            $table->foreignId('category_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('category_id')->nullable()->constrained()->nullOnDelete();
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
             $table->enum('type', ['income', 'expense', 'transfer']);
             $table->decimal('amount', 15, 2);

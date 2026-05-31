@@ -9,20 +9,16 @@ class VoiceParserService
 {
     /**
      * Parse text from voice input into transaction attributes.
-     * 
-     * @param string $text
-     * @param array $categories
-     * @return array
      */
     public function parse(string $text, array $categories = []): array
     {
         // If API Key exists, we can use AI
         $geminiKey = env('GEMINI_API_KEY');
-        if (!empty($geminiKey)) {
+        if (! empty($geminiKey)) {
             try {
                 return $this->parseWithGemini($text, $categories, $geminiKey);
             } catch (\Exception $e) {
-                Log::error('Failed parsing with Gemini API: ' . $e->getMessage());
+                Log::error('Failed parsing with Gemini API: '.$e->getMessage());
             }
         }
 
@@ -36,7 +32,7 @@ class VoiceParserService
     protected function parseLocally(string $text, array $categories): array
     {
         $cleanText = strtolower($text);
-        
+
         // Common Indonesian slang and number mapping
         $slang = [
             'gopek' => 500,
@@ -58,22 +54,22 @@ class VoiceParserService
         $wordsToDigits = [
             'setengah' => '0.5',
             'setengah' => '0.5',
-            'satu' => '1', 'dua' => '2', 'tiga' => '3', 'empat' => '4', 
+            'satu' => '1', 'dua' => '2', 'tiga' => '3', 'empat' => '4',
             'lima' => '5', 'enam' => '6', 'tujuh' => '7', 'delapan' => '8', 'sembilan' => '9',
             'sepuluh' => '10', 'sebelas' => '11', 'seratus' => '100', 'seribu' => '1000',
-            'sejuta' => '1000000'
+            'sejuta' => '1000000',
         ];
 
         foreach ($wordsToDigits as $word => $digit) {
-            $cleanText = preg_replace('/\b' . $word . '\b/u', $digit, $cleanText);
+            $cleanText = preg_replace('/\b'.$word.'\b/u', $digit, $cleanText);
         }
 
         // Extract numbers and words
         // Match direct numbers like 25.000, 25000, 10,000
         $numericPattern = '/(\d+(?:[\.,]\d+)*)/';
-        
+
         $amount = 0;
-        
+
         // Identify modifiers (ribu, juta, dsb)
         $multipliers = [
             'ribu' => 1000,
@@ -86,15 +82,15 @@ class VoiceParserService
         preg_match_all($numericPattern, $cleanText, $matches);
         $rawNumbers = $matches[0] ?? [];
 
-        if (!empty($rawNumbers)) {
+        if (! empty($rawNumbers)) {
             // Let's try to find combinations of "number + multiplier"
             foreach ($rawNumbers as $rawNum) {
                 // Strip commas/periods for normalization
                 $numVal = (float) str_replace([',', '.'], ['', ''], $rawNum);
-                
+
                 // Scan around the number for multiplier words
                 foreach ($multipliers as $word => $mult) {
-                    if (preg_match('/' . preg_quote($rawNum, '/') . '\s*(' . $word . ')/', $cleanText)) {
+                    if (preg_match('/'.preg_quote($rawNum, '/').'\s*('.$word.')/', $cleanText)) {
                         $numVal *= $mult;
                         break;
                     }
@@ -108,7 +104,7 @@ class VoiceParserService
         }
 
         // Fallback if text had pure numbers but no multipliers
-        if ($amount === 0 && !empty($rawNumbers)) {
+        if ($amount === 0 && ! empty($rawNumbers)) {
             $amount = (float) str_replace([',', '.'], ['', ''], $rawNumbers[0]);
         }
 
@@ -116,13 +112,13 @@ class VoiceParserService
         // Strip amount indicator words and the extracted numbers
         $stopWords = ['rupiah', 'rp', 'ribu', 'juta', 'miliar', 'k', 'sebesar', 'nominal'];
         $note = $text;
-        
+
         foreach ($rawNumbers as $num) {
             $note = str_ireplace($num, '', $note);
         }
 
         foreach ($stopWords as $sw) {
-            $note = preg_replace('/\b' . $sw . '\b/ui', '', $note);
+            $note = preg_replace('/\b'.$sw.'\b/ui', '', $note);
         }
 
         // Clean up spaces, strip common filler words from the beginning
@@ -131,7 +127,7 @@ class VoiceParserService
         $note = ucfirst(trim($note));
 
         if (empty($note)) {
-            $note = "Catatan Suara (" . date('H:i') . ")";
+            $note = 'Catatan Suara ('.date('H:i').')';
         }
 
         // Categorization recommendation
@@ -141,11 +137,11 @@ class VoiceParserService
         foreach ($categories as $cat) {
             $catName = strtolower($cat['name'] ?? '');
             // Check if category name is present in text
-            if (!empty($catName) && (str_contains(strtolower($text), $catName) || str_contains(strtolower($note), $catName))) {
+            if (! empty($catName) && (str_contains(strtolower($text), $catName) || str_contains(strtolower($note), $catName))) {
                 $detectedCategoryId = $cat['id'];
                 break;
             }
-            
+
             // Fallback: check common matching keywords
             $keywords = $this->getCategoryKeywords($catName);
             foreach ($keywords as $kw) {
@@ -169,27 +165,27 @@ class VoiceParserService
      */
     protected function parseWithGemini(string $text, array $categories, string $apiKey): array
     {
-        $catList = array_map(fn($c) => "ID: {$c['id']} - Name: {$c['name']}", $categories);
-        $catStr = implode(", ", $catList);
+        $catList = array_map(fn ($c) => "ID: {$c['id']} - Name: {$c['name']}", $categories);
+        $catStr = implode(', ', $catList);
 
-        $prompt = "You are a smart financial transaction parser. "
-            . "Given this raw Indonesian text: \"$text\", "
-            . "Extract the transaction 'amount' (integer), 'note' (string description, cleaned and capitalized), "
-            . "and map it to the most appropriate 'category_id' (integer) from this provided list of available categories: [$catStr]. "
-            . "If no category matches well, set 'category_id' to null. "
-            . "Return only valid JSON. Do not include Markdown markup or explanation.";
+        $prompt = 'You are a smart financial transaction parser. '
+            ."Given this raw Indonesian text: \"$text\", "
+            ."Extract the transaction 'amount' (integer), 'note' (string description, cleaned and capitalized), "
+            ."and map it to the most appropriate 'category_id' (integer) from this provided list of available categories: [$catStr]. "
+            ."If no category matches well, set 'category_id' to null. "
+            .'Return only valid JSON. Do not include Markdown markup or explanation.';
 
         $response = Http::withHeaders([
             'Content-Type' => 'application/json',
         ])->post("https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={$apiKey}", [
             'contents' => [
                 'parts' => [
-                    ['text' => $prompt]
-                ]
+                    ['text' => $prompt],
+                ],
             ],
             'generationConfig' => [
-                'responseMimeType' => 'application/json'
-            ]
+                'responseMimeType' => 'application/json',
+            ],
         ]);
 
         if ($response->successful()) {
@@ -207,7 +203,7 @@ class VoiceParserService
             }
         }
 
-        throw new \Exception("Gemini API error or malformed JSON");
+        throw new \Exception('Gemini API error or malformed JSON');
     }
 
     /**

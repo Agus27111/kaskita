@@ -63,9 +63,17 @@ const rightItems = [
             <!-- Center FAB Button -->
             <button
                 @click="showQuickMenu = !showQuickMenu"
-                class="bottom-nav-center-btn outline-none border-none focus:ring-0 cursor-pointer"
+                class="bottom-nav-center-btn cursor-pointer border-none outline-none focus:ring-0"
             >
-                <div class="bottom-nav-center-inner" :style="{ background: showQuickMenu ? 'linear-gradient(135deg, #f43f5e 0%, #e11d48 100%)' : 'linear-gradient(135deg, #8b5cf6 0%, #a78bfa 50%, #c4b5fd 100%)', transform: showQuickMenu ? 'rotate(45deg)' : 'none' }">
+                <div
+                    class="bottom-nav-center-inner"
+                    :style="{
+                        background: showQuickMenu
+                            ? 'linear-gradient(135deg, #f43f5e 0%, #e11d48 100%)'
+                            : 'linear-gradient(135deg, #8b5cf6 0%, #a78bfa 50%, #c4b5fd 100%)',
+                        transform: showQuickMenu ? 'rotate(45deg)' : 'none',
+                    }"
+                >
                     <Plus class="bottom-nav-center-icon" />
                 </div>
             </button>
@@ -86,66 +94,96 @@ const rightItems = [
 
     <!-- Quick Actions Floating Overlay -->
     <Teleport to="body">
-        <div 
-            v-if="showQuickMenu" 
-            class="fixed inset-0 bg-black/40 dark:bg-black/60 backdrop-blur-md z-45 flex flex-col justify-end p-6 transition duration-300 ease-out"
+        <div
+            v-if="showQuickMenu"
+            class="fixed inset-0 z-45 flex flex-col justify-end bg-black/40 p-6 backdrop-blur-md transition duration-300 ease-out dark:bg-black/60"
             @click.self="showQuickMenu = false"
         >
-            <div class="max-w-[380px] w-full mx-auto space-y-4 mb-24 animate-in slide-in-from-bottom-12 duration-300 ease-out">
-                <div class="bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl rounded-3xl p-4 shadow-2xl border border-gray-100 dark:border-zinc-800 space-y-2">
-                    <p class="text-center text-[10px] font-black uppercase tracking-widest text-gray-400 dark:text-zinc-500 pb-2 border-b border-gray-50 dark:border-zinc-800/50">
+            <div
+                class="mx-auto mb-24 w-full max-w-[380px] animate-in space-y-4 duration-300 ease-out slide-in-from-bottom-12"
+            >
+                <div
+                    class="space-y-2 rounded-3xl border border-gray-100 bg-white/95 p-4 shadow-2xl backdrop-blur-xl dark:border-zinc-800 dark:bg-zinc-900/95"
+                >
+                    <p
+                        class="border-b border-gray-50 pb-2 text-center text-[10px] font-black tracking-widest text-gray-400 uppercase dark:border-zinc-800/50 dark:text-zinc-500"
+                    >
                         Catat Transaksi Baru
                     </p>
 
                     <!-- Pemasukan Option -->
-                    <Link 
-                        href="/dashboard?action=income" 
+                    <Link
+                        href="/dashboard?action=income"
                         @click="showQuickMenu = false"
-                        class="flex items-center gap-4 p-3.5 rounded-2xl hover:bg-emerald-50 dark:hover:bg-emerald-950/20 text-emerald-600 dark:text-emerald-400 font-extrabold text-sm transition"
+                        class="flex items-center gap-4 rounded-2xl p-3.5 text-sm font-extrabold text-emerald-600 transition hover:bg-emerald-50 dark:text-emerald-400 dark:hover:bg-emerald-950/20"
                     >
-                        <div class="w-10 h-10 bg-emerald-500/10 rounded-xl flex items-center justify-center shrink-0">
-                            <ArrowUpRight class="w-5 h-5" />
+                        <div
+                            class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-500/10"
+                        >
+                            <ArrowUpRight class="h-5 w-5" />
                         </div>
                         <div class="text-left">
-                            <p class="font-extrabold text-xs">Catat Pemasukan</p>
-                            <p class="text-[9px] text-gray-400 dark:text-zinc-500 font-semibold mt-0.5">Catat gaji, bonus, atau uang masuk lainnya</p>
+                            <p class="text-xs font-extrabold">
+                                Catat Pemasukan
+                            </p>
+                            <p
+                                class="mt-0.5 text-[9px] font-semibold text-gray-400 dark:text-zinc-500"
+                            >
+                                Catat gaji, bonus, atau uang masuk lainnya
+                            </p>
                         </div>
                     </Link>
 
                     <!-- Pengeluaran Option -->
-                    <Link 
-                        href="/dashboard?action=expense" 
+                    <Link
+                        href="/dashboard?action=expense"
                         @click="showQuickMenu = false"
-                        class="flex items-center gap-4 p-3.5 rounded-2xl hover:bg-rose-50 dark:hover:bg-rose-950/20 text-rose-600 dark:text-rose-400 font-extrabold text-sm transition"
+                        class="flex items-center gap-4 rounded-2xl p-3.5 text-sm font-extrabold text-rose-600 transition hover:bg-rose-50 dark:text-rose-400 dark:hover:bg-rose-950/20"
                     >
-                        <div class="w-10 h-10 bg-rose-500/10 rounded-xl flex items-center justify-center shrink-0">
-                            <ArrowDownRight class="w-5 h-5" />
+                        <div
+                            class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-rose-500/10"
+                        >
+                            <ArrowDownRight class="h-5 w-5" />
                         </div>
                         <div class="text-left">
-                            <p class="font-extrabold text-xs">Catat Pengeluaran</p>
-                            <p class="text-[9px] text-gray-400 dark:text-zinc-500 font-semibold mt-0.5">Catat belanjaan, jajan, tagihan bulanan</p>
+                            <p class="text-xs font-extrabold">
+                                Catat Pengeluaran
+                            </p>
+                            <p
+                                class="mt-0.5 text-[9px] font-semibold text-gray-400 dark:text-zinc-500"
+                            >
+                                Catat belanjaan, jajan, tagihan bulanan
+                            </p>
                         </div>
                     </Link>
 
                     <!-- Transfer Option -->
-                    <Link 
-                        href="/dashboard?action=transfer" 
+                    <Link
+                        href="/dashboard?action=transfer"
                         @click="showQuickMenu = false"
-                        class="flex items-center gap-4 p-3.5 rounded-2xl hover:bg-violet-50 dark:hover:bg-violet-950/20 text-violet-600 dark:text-violet-400 font-extrabold text-sm transition"
+                        class="flex items-center gap-4 rounded-2xl p-3.5 text-sm font-extrabold text-violet-600 transition hover:bg-violet-50 dark:text-violet-400 dark:hover:bg-violet-950/20"
                     >
-                        <div class="w-10 h-10 bg-violet-500/10 rounded-xl flex items-center justify-center shrink-0">
-                            <ArrowLeftRight class="w-5 h-5" />
+                        <div
+                            class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-violet-500/10"
+                        >
+                            <ArrowLeftRight class="h-5 w-5" />
                         </div>
                         <div class="text-left">
-                            <p class="font-extrabold text-xs">Lakukan Transfer</p>
-                            <p class="text-[9px] text-gray-400 dark:text-zinc-500 font-semibold mt-0.5">Pindahkan saldo antar dompet keluarga</p>
+                            <p class="text-xs font-extrabold">
+                                Lakukan Transfer
+                            </p>
+                            <p
+                                class="mt-0.5 text-[9px] font-semibold text-gray-400 dark:text-zinc-500"
+                            >
+                                Pindahkan saldo antar dompet keluarga
+                            </p>
                         </div>
                     </Link>
                 </div>
 
-                <button 
+                <button
                     @click="showQuickMenu = false"
-                    class="w-full bg-gray-100 dark:bg-zinc-800 hover:bg-gray-200 text-gray-800 dark:text-gray-200 font-black py-4 rounded-2xl text-xs transition cursor-pointer shadow-md"
+                    class="w-full cursor-pointer rounded-2xl bg-gray-100 py-4 text-xs font-black text-gray-800 shadow-md transition hover:bg-gray-200 dark:bg-zinc-800 dark:text-gray-200"
                 >
                     Tutup
                 </button>

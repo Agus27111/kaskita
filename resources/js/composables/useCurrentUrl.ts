@@ -24,7 +24,7 @@ export type UseCurrentUrlReturn = {
 
 export function useCurrentUrl(): UseCurrentUrlReturn {
     const page = usePage();
-    
+
     const currentUrlReactive = computed(
         () =>
             new URL(

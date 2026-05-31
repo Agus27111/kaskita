@@ -5,12 +5,16 @@ namespace App\Http\Controllers;
 use App\Models\Budget;
 use App\Models\Category;
 use App\Models\Transaction;
+use App\Services\BudgetSpendingService;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class BudgetController extends Controller
 {
+    public function __construct(private BudgetSpendingService $budgetSpending) {}
+
     /**
      * Show the budgeting page.
      */
@@ -19,42 +23,57 @@ class BudgetController extends Controller
         $user = $request->user();
         $family = $user->family;
 
-        $month = (int) $request->get('month', now()->month);
-        $year = (int) $request->get('year', now()->year);
-        $week = (int) $request->get('week', now()->isoWeek());
+        $filters = $request->validate([
+            'month' => ['nullable', 'integer', 'between:1,12'],
+            'year' => ['nullable', 'integer', 'between:2000,2100'],
+            'week' => ['nullable', 'integer', 'between:1,53'],
+        ]);
 
-        // Get monthly budgets with spent calculations
-        $monthlyBudgets = Budget::with('category')
+        $month = (int) ($filters['month'] ?? now()->month);
+        $year = (int) ($filters['year'] ?? now()->year);
+        $week = (int) ($filters['week'] ?? now()->isoWeek());
+        $monthStart = now()->setDate($year, $month, 1)->startOfMonth();
+        $monthEnd = $monthStart->endOfMonth();
+        $weekStart = now()->setISODate($year, $week)->startOfWeek();
+        $weekEnd = $weekStart->endOfWeek();
+
+        $monthlyBudgets = Budget::with('category:id,name,icon,color')
             ->where('family_id', $family->id)
             ->where('period', 'monthly')
             ->where('month', $month)
             ->where('year', $year)
-            ->get()
+            ->orderByDesc('amount')
+            ->get();
+
+        $this->budgetSpending->hydrate($monthlyBudgets, $family->id, $monthStart, $monthEnd);
+
+        $monthlyBudgets = $monthlyBudgets
             ->map(fn ($b) => $this->formatBudget($b));
 
-        // Get weekly budgets
-        $weeklyBudgets = Budget::with('category')
+        $weeklyBudgets = Budget::with('category:id,name,icon,color')
             ->where('family_id', $family->id)
             ->where('period', 'weekly')
             ->where('week', $week)
             ->where('year', $year)
-            ->get()
-            ->map(fn ($b) => $this->formatBudget($b));
-
-        // Categories for creating new budgets (only expense type)
-        $categories = Category::where('family_id', $family->id)
-            ->where('type', 'expense')
+            ->orderByDesc('amount')
             ->get();
 
-        // Total monthly budget vs total spent
+        $this->budgetSpending->hydrate($weeklyBudgets, $family->id, $weekStart, $weekEnd);
+
+        $weeklyBudgets = $weeklyBudgets
+            ->map(fn ($b) => $this->formatBudget($b));
+
+        $categories = Category::where('family_id', $family->id)
+            ->where('type', 'expense')
+            ->orderBy('name')
+            ->get(['id', 'family_id', 'name', 'type', 'icon', 'color']);
+
         $totalMonthlyBudget = $monthlyBudgets->sum('amount');
         $totalMonthlySpent = $monthlyBudgets->sum('spent');
 
-        // Monthly income for context
         $monthlyIncome = Transaction::where('family_id', $family->id)
             ->where('type', 'income')
-            ->whereMonth('date', $month)
-            ->whereYear('date', $year)
+            ->whereBetween('date', [$monthStart->toDateString(), $monthEnd->toDateString()])
             ->sum('amount');
 
         return Inertia::render('Budget/Index', [
@@ -112,43 +131,45 @@ class BudgetController extends Controller
             ]);
 
             $categoryId = $category->id;
+        } else {
+            $request->validate([
+                'category_id' => [
+                    'required',
+                    Rule::exists('categories', 'id')->where(fn ($query) => $query
+                        ->where('family_id', $family->id)
+                        ->where('type', 'expense')),
+                ],
+            ]);
         }
-
-        // Build budget data
-        $data = [
-            'family_id' => $family->id,
-            'category_id' => $categoryId,
-            'amount' => $validated['amount'],
-            'period' => $validated['period'],
-            'note' => $validated['note'] ?? null,
-            'is_recurring' => true,
-        ];
 
         if ($validated['period'] === 'monthly') {
-            $data['month'] = $now->month;
-            $data['year'] = $now->year;
+            $lookup = [
+                'family_id' => $family->id,
+                'category_id' => $categoryId,
+                'period' => 'monthly',
+                'month' => $now->month,
+                'year' => $now->year,
+            ];
+
+            $periodData = ['week' => null];
         } else {
-            $data['week'] = $now->isoWeek();
-            $data['year'] = $now->year;
+            $lookup = [
+                'family_id' => $family->id,
+                'category_id' => $categoryId,
+                'period' => 'weekly',
+                'week' => $now->isoWeek(),
+                'year' => $now->year,
+            ];
+
+            $periodData = ['month' => null];
         }
 
-        // Check if budget already exists for this period
-        $existing = Budget::where('family_id', $family->id)
-            ->where('category_id', $validated['category_id'])
-            ->where('period', $validated['period'])
-            ->when($validated['period'] === 'monthly', function ($q) use ($data) {
-                $q->where('month', $data['month'])->where('year', $data['year']);
-            })
-            ->when($validated['period'] === 'weekly', function ($q) use ($data) {
-                $q->where('week', $data['week'])->where('year', $data['year']);
-            })
-            ->first();
-
-        if ($existing) {
-            $existing->update(['amount' => $validated['amount'], 'note' => $data['note']]);
-        } else {
-            Budget::create($data);
-        }
+        Budget::updateOrCreate($lookup, [
+            ...$periodData,
+            'amount' => $validated['amount'],
+            'note' => $validated['note'] ?? null,
+            'is_recurring' => true,
+        ]);
 
         return back()->with('success', 'Budget berhasil disimpan!');
     }

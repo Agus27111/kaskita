@@ -14,9 +14,9 @@ class WalletController extends Controller
     {
         $validated = $request->validate([
             'name' => 'required|string|max:50',
-            'type' => 'required|in:bank,cash,ewallet,investment',
+            'type' => 'required|string|max:50',
             'balance' => 'required|numeric|min:0',
-            'color' => 'required|string|max:7',
+            'color' => ['required', 'string', 'regex:/^#[0-9a-fA-F]{6}$/'],
         ]);
 
         $family = $request->user()->family;

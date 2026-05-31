@@ -22,7 +22,10 @@ defineProps<{
 </script>
 
 <template>
-    <AuthLayout title="Selamat Datang Kembali" description="Masuk ke akun KasKita Anda">
+    <AuthLayout
+        title="Selamat Datang Kembali"
+        description="Masuk ke akun KasKita Anda"
+    >
         <Head title="Masuk" />
 
         <div
@@ -41,7 +44,9 @@ defineProps<{
         >
             <div class="grid gap-5">
                 <div class="grid gap-2">
-                    <Label for="email" class="text-xs font-bold text-gray-500">EMAIL</Label>
+                    <Label for="email" class="text-xs font-bold text-gray-500"
+                        >EMAIL</Label
+                    >
                     <Input
                         id="email"
                         type="email"
@@ -58,7 +63,11 @@ defineProps<{
 
                 <div class="grid gap-2">
                     <div class="flex items-center justify-between">
-                        <Label for="password" class="text-xs font-bold text-gray-500">PASSWORD</Label>
+                        <Label
+                            for="password"
+                            class="text-xs font-bold text-gray-500"
+                            >PASSWORD</Label
+                        >
                         <TextLink
                             v-if="canResetPassword"
                             :href="request()"
@@ -82,7 +91,10 @@ defineProps<{
 
                 <div class="flex items-center gap-3">
                     <Checkbox id="remember" name="remember" :tabindex="3" />
-                    <Label for="remember" class="text-xs text-gray-500 dark:text-gray-400 font-bold cursor-pointer select-none">
+                    <Label
+                        for="remember"
+                        class="cursor-pointer text-xs font-bold text-gray-500 select-none dark:text-gray-400"
+                    >
                         Ingat saya
                     </Label>
                 </div>
@@ -101,14 +113,14 @@ defineProps<{
             </div>
 
             <div
-                class="text-center text-xs text-gray-400 dark:text-gray-500 font-bold"
+                class="text-center text-xs font-bold text-gray-400 dark:text-gray-500"
                 v-if="canRegister"
             >
                 Belum punya akun?
                 <TextLink
                     :href="register()"
                     :tabindex="5"
-                    class="font-extrabold text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 ml-1"
+                    class="ml-1 font-extrabold text-emerald-600 hover:text-emerald-700 dark:text-emerald-400"
                 >
                     Daftar sekarang
                 </TextLink>

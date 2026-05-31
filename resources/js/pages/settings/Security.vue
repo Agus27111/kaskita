@@ -63,11 +63,15 @@ onUnmounted(() => clearTwoFactorAuthData());
                     v-slot="{ errors, processing }"
                 >
                     <div class="grid gap-2">
-                        <Label for="current_password" class="text-xs font-bold text-gray-500">CURRENT PASSWORD</Label>
+                        <Label
+                            for="current_password"
+                            class="text-xs font-bold text-gray-500"
+                            >CURRENT PASSWORD</Label
+                        >
                         <PasswordInput
                             id="current_password"
                             name="current_password"
-                            class="mt-1 block w-full bg-gray-50/50 dark:bg-zinc-800/50 border border-gray-200 dark:border-zinc-700 rounded-xl"
+                            class="mt-1 block w-full rounded-xl border border-gray-200 bg-gray-50/50 dark:border-zinc-700 dark:bg-zinc-800/50"
                             autocomplete="current-password"
                             placeholder="Current password"
                         />
@@ -75,11 +79,15 @@ onUnmounted(() => clearTwoFactorAuthData());
                     </div>
 
                     <div class="grid gap-2">
-                        <Label for="password" class="text-xs font-bold text-gray-500">NEW PASSWORD</Label>
+                        <Label
+                            for="password"
+                            class="text-xs font-bold text-gray-500"
+                            >NEW PASSWORD</Label
+                        >
                         <PasswordInput
                             id="password"
                             name="password"
-                            class="mt-1 block w-full bg-gray-50/50 dark:bg-zinc-800/50 border border-gray-200 dark:border-zinc-700 rounded-xl"
+                            class="mt-1 block w-full rounded-xl border border-gray-200 bg-gray-50/50 dark:border-zinc-700 dark:bg-zinc-800/50"
                             autocomplete="new-password"
                             placeholder="New password"
                         />
@@ -87,11 +95,15 @@ onUnmounted(() => clearTwoFactorAuthData());
                     </div>
 
                     <div class="grid gap-2">
-                        <Label for="password_confirmation" class="text-xs font-bold text-gray-500">CONFIRM PASSWORD</Label>
+                        <Label
+                            for="password_confirmation"
+                            class="text-xs font-bold text-gray-500"
+                            >CONFIRM PASSWORD</Label
+                        >
                         <PasswordInput
                             id="password_confirmation"
                             name="password_confirmation"
-                            class="mt-1 block w-full bg-gray-50/50 dark:bg-zinc-800/50 border border-gray-200 dark:border-zinc-700 rounded-xl"
+                            class="mt-1 block w-full rounded-xl border border-gray-200 bg-gray-50/50 dark:border-zinc-700 dark:bg-zinc-800/50"
                             autocomplete="new-password"
                             placeholder="Confirm password"
                         />
@@ -102,7 +114,7 @@ onUnmounted(() => clearTwoFactorAuthData());
                         <Button
                             :disabled="processing"
                             data-test="update-password-button"
-                            class="bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white font-bold px-6 py-2.5 rounded-xl transition cursor-pointer shadow-md shadow-emerald-500/10"
+                            class="cursor-pointer rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 px-6 py-2.5 font-bold text-white shadow-md shadow-emerald-500/10 transition hover:from-emerald-600 hover:to-teal-600"
                         >
                             Save password
                         </Button>
@@ -122,13 +134,17 @@ onUnmounted(() => clearTwoFactorAuthData());
                     class="flex flex-col items-start justify-start space-y-4"
                 >
                     <p class="text-sm text-muted-foreground">
-                        When you enable two-factor authentication, you will be prompted
-                        for a secure pin during login. This pin can be retrieved from a
-                        TOTP-supported application on your phone.
+                        When you enable two-factor authentication, you will be
+                        prompted for a secure pin during login. This pin can be
+                        retrieved from a TOTP-supported application on your
+                        phone.
                     </p>
 
                     <div>
-                        <Button v-if="hasSetupData" @click="showSetupModal = true">
+                        <Button
+                            v-if="hasSetupData"
+                            @click="showSetupModal = true"
+                        >
                             <ShieldCheck />Continue setup
                         </Button>
                         <Form
@@ -144,11 +160,14 @@ onUnmounted(() => clearTwoFactorAuthData());
                     </div>
                 </div>
 
-                <div class="flex flex-col items-start justify-start space-y-4" v-else>
+                <div
+                    class="flex flex-col items-start justify-start space-y-4"
+                    v-else
+                >
                     <p class="text-sm text-muted-foreground">
-                        You will be prompted for a secure, random pin during login,
-                        which you can retrieve from the TOTP-supported application on
-                        your phone.
+                        You will be prompted for a secure, random pin during
+                        login, which you can retrieve from the TOTP-supported
+                        application on your phone.
                     </p>
 
                     <div class="relative inline">

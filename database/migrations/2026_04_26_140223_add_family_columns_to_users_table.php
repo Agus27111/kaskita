@@ -37,7 +37,7 @@ return new class extends Migration
                 'family_id',
                 'role',
                 'telegram_chat_id',
-                'default_wallet_id'
+                'default_wallet_id',
             ]);
         });
     }

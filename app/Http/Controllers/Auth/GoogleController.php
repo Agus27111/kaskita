@@ -18,7 +18,7 @@ class GoogleController extends Controller
     {
         try {
             $googleUser = Socialite::driver('google')->user();
-            
+
             $user = User::updateOrCreate([
                 'email' => $googleUser->getEmail(),
             ], [
@@ -31,7 +31,7 @@ class GoogleController extends Controller
             Auth::login($user);
 
             return redirect()->intended('/');
-            
+
         } catch (\Exception $e) {
             return redirect()->route('login')->with('error', 'Gagal login menggunakan Google.');
         }

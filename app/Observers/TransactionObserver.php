@@ -16,7 +16,7 @@ class TransactionObserver
     public function updated(Transaction $transaction): void
     {
         // Handle changes in amount, type, or wallet
-        if ($transaction->isDirty(['amount', 'type', 'wallet_id', 'transfer_to_wallet_id'])) {
+        if ($transaction->wasChanged(['amount', 'type', 'wallet_id', 'transfer_to_wallet_id'])) {
             // Revert old transaction effect
             $oldTransaction = new Transaction($transaction->getOriginal());
             $this->updateWalletBalance($oldTransaction, 'decrement_actual');
@@ -55,10 +55,8 @@ class TransactionObserver
 
     protected function adjustBalance(int $walletId, $amount): void
     {
-        $wallet = Wallet::find($walletId);
-        if ($wallet) {
-            $wallet->balance += $amount;
-            $wallet->save();
-        }
+        Wallet::withoutGlobalScopes()
+            ->whereKey($walletId)
+            ->increment('balance', $amount);
     }
 }

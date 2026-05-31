@@ -36,7 +36,9 @@ defineProps<{
                 <div class="auth-brand-hero">
                     <h2 class="auth-brand-tagline">
                         Kelola Keuangan<br />
-                        <span class="auth-brand-tagline-accent">Keluarga Anda</span>
+                        <span class="auth-brand-tagline-accent"
+                            >Keluarga Anda</span
+                        >
                     </h2>
                     <p class="auth-brand-desc">
                         Catat pemasukan, pengeluaran, dan pantau kesehatan
@@ -77,7 +79,9 @@ defineProps<{
             <div class="auth-form-wrapper">
                 <div class="auth-form-header" v-if="title || description">
                     <h1 class="auth-form-title" v-if="title">{{ title }}</h1>
-                    <p class="auth-form-desc" v-if="description">{{ description }}</p>
+                    <p class="auth-form-desc" v-if="description">
+                        {{ description }}
+                    </p>
                 </div>
                 <slot />
             </div>
@@ -116,7 +120,13 @@ defineProps<{
 .auth-brand-bg {
     position: absolute;
     inset: 0;
-    background: linear-gradient(135deg, #064e3b 0%, #065f46 30%, #047857 60%, #059669 100%);
+    background: linear-gradient(
+        135deg,
+        #064e3b 0%,
+        #065f46 30%,
+        #047857 60%,
+        #059669 100%
+    );
 }
 
 .auth-brand-overlay {
@@ -161,18 +171,33 @@ defineProps<{
 }
 
 @keyframes orbFloat1 {
-    0%, 100% { transform: translate(0, 0) scale(1); }
-    50% { transform: translate(-30px, 40px) scale(1.1); }
+    0%,
+    100% {
+        transform: translate(0, 0) scale(1);
+    }
+    50% {
+        transform: translate(-30px, 40px) scale(1.1);
+    }
 }
 
 @keyframes orbFloat2 {
-    0%, 100% { transform: translate(0, 0) scale(1); }
-    50% { transform: translate(20px, -30px) scale(0.9); }
+    0%,
+    100% {
+        transform: translate(0, 0) scale(1);
+    }
+    50% {
+        transform: translate(20px, -30px) scale(0.9);
+    }
 }
 
 @keyframes orbFloat3 {
-    0%, 100% { transform: translate(0, 0) scale(1); }
-    50% { transform: translate(-20px, -20px) scale(1.15); }
+    0%,
+    100% {
+        transform: translate(0, 0) scale(1);
+    }
+    50% {
+        transform: translate(-20px, -20px) scale(1.15);
+    }
 }
 
 /* Brand Content */

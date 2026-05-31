@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Budget extends Model
 {
-    use HasFactory, BelongsToFamily;
+    use BelongsToFamily, HasFactory;
 
     protected $fillable = [
         'family_id',
@@ -38,18 +38,20 @@ class Budget extends Model
      */
     public function getSpentAttribute(): float
     {
-        if (!array_key_exists('spent_local_cache', $this->relations)) {
-            $query = \App\Models\Transaction::where('family_id', $this->family_id)
+        if (! array_key_exists('spent_local_cache', $this->relations)) {
+            $query = Transaction::where('family_id', $this->family_id)
                 ->where('category_id', $this->category_id)
                 ->where('type', 'expense');
 
             if ($this->period === 'weekly' && $this->week && $this->year) {
                 $startOfWeek = now()->setISODate($this->year, $this->week)->startOfWeek();
                 $endOfWeek = now()->setISODate($this->year, $this->week)->endOfWeek();
-                $query->whereBetween('date', [$startOfWeek, $endOfWeek]);
+                $query->whereBetween('date', [$startOfWeek->toDateString(), $endOfWeek->toDateString()]);
+            } elseif ($this->month && $this->year) {
+                $startOfMonth = now()->setDate($this->year, $this->month, 1)->startOfMonth();
+                $query->whereBetween('date', [$startOfMonth->toDateString(), $startOfMonth->endOfMonth()->toDateString()]);
             } else {
-                $query->whereMonth('date', $this->month)
-                      ->whereYear('date', $this->year);
+                $query->whereRaw('1 = 0');
             }
 
             $this->setRelation('spent_local_cache', (float) $query->sum('amount'));
@@ -93,9 +95,16 @@ class Budget extends Model
     {
         $pct = $this->percentage;
 
-        if ($pct > 100) return 'over';
-        if ($pct >= 80) return 'danger';
-        if ($pct >= 60) return 'warning';
+        if ($pct > 100) {
+            return 'over';
+        }
+        if ($pct >= 80) {
+            return 'danger';
+        }
+        if ($pct >= 60) {
+            return 'warning';
+        }
+
         return 'safe';
     }
 
@@ -127,12 +136,12 @@ class Budget extends Model
         return $query->where(function ($q) {
             $q->where(function ($q2) {
                 $q2->where('period', 'monthly')
-                   ->where('month', now()->month)
-                   ->where('year', now()->year);
+                    ->where('month', now()->month)
+                    ->where('year', now()->year);
             })->orWhere(function ($q2) {
                 $q2->where('period', 'weekly')
-                   ->where('week', now()->isoWeek())
-                   ->where('year', now()->year);
+                    ->where('week', now()->isoWeek())
+                    ->where('year', now()->year);
             });
         });
     }

@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Str;
 
 class Family extends Model
 {
@@ -18,14 +19,16 @@ class Family extends Model
 
     public function getInviteCodeAttribute($value)
     {
-        if (!$value) {
-            $code = strtoupper(\Illuminate\Support\Str::random(6));
+        if (! $value) {
+            $code = strtoupper(Str::random(6));
             while (self::where('invite_code', $code)->exists()) {
-                $code = strtoupper(\Illuminate\Support\Str::random(6));
+                $code = strtoupper(Str::random(6));
             }
             $this->update(['invite_code' => $code]);
+
             return $code;
         }
+
         return $value;
     }
 

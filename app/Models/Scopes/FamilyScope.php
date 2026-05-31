@@ -20,7 +20,7 @@ class FamilyScope implements Scope
         $familyId = auth()->user()?->family_id;
 
         if ($familyId) {
-            $builder->where($model->getTable() . '.family_id', $familyId);
+            $builder->where($model->getTable().'.family_id', $familyId);
         }
     }
 }

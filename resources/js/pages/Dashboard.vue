@@ -33,6 +33,7 @@ interface Wallet {
 interface Category {
     id: number;
     name: string;
+    type: 'income' | 'expense';
     icon: string;
     color: string;
 }
@@ -61,6 +62,13 @@ interface WalletType {
     id: number;
     name: string;
     icon: string | null;
+}
+
+interface WeeklyChartDay {
+    date: string;
+    label: string;
+    income: number;
+    expense: number;
 }
 
 const props = defineProps<{
@@ -102,7 +110,7 @@ const openTransactionModal = (type: 'income' | 'expense' | 'transfer') => {
     transactionModalType.value = type;
     transactionForm.reset();
     transactionForm.type = type;
-    
+
     if (props.wallets.length > 0) {
         transactionForm.wallet_id = props.wallets[0].id;
 
@@ -110,8 +118,8 @@ const openTransactionModal = (type: 'income' | 'expense' | 'transfer') => {
             transactionForm.transfer_to_wallet_id = props.wallets[1].id;
         }
     }
-    
-    const matchingCats = props.categories.filter(c => c.type === type);
+
+    const matchingCats = props.categories.filter((c) => c.type === type);
 
     if (matchingCats.length > 0) {
         transactionForm.category_id = matchingCats[0].id;
@@ -127,7 +135,11 @@ const isProcessingVoice = ref(false);
 const voiceTranscript = ref('');
 const voiceError = ref('');
 
-const SpeechRecognition = typeof window !== 'undefined' ? ((window as any).SpeechRecognition || (window as any).webkitSpeechRecognition) : null;
+const SpeechRecognition =
+    typeof window !== 'undefined'
+        ? (window as any).SpeechRecognition ||
+          (window as any).webkitSpeechRecognition
+        : null;
 let recognition: any = null;
 
 if (SpeechRecognition) {
@@ -147,7 +159,8 @@ if (SpeechRecognition) {
 
     recognition.onerror = (event: any) => {
         console.error('Speech recognition error', event.error);
-        voiceError.value = 'Gagal merekam suara. Coba lagi atau izinkan akses mikrofon.';
+        voiceError.value =
+            'Gagal merekam suara. Coba lagi atau izinkan akses mikrofon.';
         isListening.value = false;
     };
 
@@ -160,7 +173,10 @@ if (SpeechRecognition) {
 
 const toggleListening = () => {
     if (!recognition) {
-        alert('Browser Anda tidak mendukung fitur perekaman suara secara native.');
+        alert(
+            'Browser Anda tidak mendukung fitur perekaman suara secara native.',
+        );
+
         return;
     }
 
@@ -175,39 +191,53 @@ const toggleListening = () => {
 
 const handleVoiceParsed = async (text: string) => {
     isProcessingVoice.value = true;
+
     try {
-        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
-        
+        const csrfToken =
+            document
+                .querySelector('meta[name="csrf-token"]')
+                ?.getAttribute('content') || '';
+
         const response = await fetch('/transactions/parse-voice', {
             method: 'POST',
             headers: {
+                Accept: 'application/json',
                 'Content-Type': 'application/json',
-                'Accept': 'application/json',
-                'X-CSRF-TOKEN': csrfToken
+                'X-CSRF-TOKEN': csrfToken,
             },
-            body: JSON.stringify({ text })
+            body: JSON.stringify({ text }),
         });
 
-        if (!response.ok) throw new Error('Gagal menghubungi parser.');
+        if (!response.ok) {
+            throw new Error('Gagal menghubungi parser.');
+        }
 
         const data = await response.json();
-        
+
         if (data.amount) {
             transactionForm.amount = data.amount;
         }
+
         if (data.note) {
             transactionForm.note = data.note;
         }
+
         if (data.category_id) {
             // Validasi apakah kategori yang ditemukan sesuai dengan tipe transaksi saat ini
-            const exists = props.categories.some(c => c.id === data.category_id && c.type === transactionModalType.value);
+            const exists = props.categories.some(
+                (c) =>
+                    c.id === data.category_id &&
+                    c.type === transactionModalType.value,
+            );
+
             if (exists) {
                 transactionForm.category_id = data.category_id;
             }
         }
     } catch (error) {
         console.error('Error parsing voice', error);
-        voiceError.value = 'Gagal menganalisis suara. Coba gunakan bahasa yang lebih jelas.';
+        voiceError.value =
+            'Gagal menganalisis suara. Coba gunakan bahasa yang lebih jelas.';
     } finally {
         isProcessingVoice.value = false;
     }
@@ -275,8 +305,8 @@ const deleteWallet = (wallet: any) => {
         'Hapus Dompet?',
         `Apakah Anda yakin ingin menghapus dompet "${wallet.name}"? Saldo dompet ini akan ikut terhapus dari sistem.`,
         () => {
- walletForm.delete(`/wallets/${wallet.id}`); 
-}
+            walletForm.delete(`/wallets/${wallet.id}`);
+        },
     );
 };
 
@@ -294,7 +324,7 @@ const submitWalletType = () => {
             if (props.walletTypes.length > 0) {
                 walletForm.type = props.walletTypes[0].name;
             }
-        }
+        },
     });
 };
 
@@ -303,8 +333,8 @@ const deleteWalletType = (type: any) => {
         'Hapus Jenis Dompet?',
         `Apakah Anda yakin ingin menghapus jenis dompet "${type.name}"? Jenis ini tidak akan tersedia lagi untuk dompet baru.`,
         () => {
- walletTypeForm.delete(`/wallet-types/${type.id}`); 
-}
+            walletTypeForm.delete(`/wallet-types/${type.id}`);
+        },
     );
 };
 
@@ -313,14 +343,18 @@ const getWalletEmoji = (type: string) => {
         'Rekening Bank': '🏦',
         'Uang Tunai (Cash)': '💵',
         'E-Wallet': '📱',
-        'Investasi': '📈',
-        'bank': '🏦',
-        'cash': '💵',
-        'ewallet': '📱',
-        'investment': '📈',
+        Investasi: '📈',
+        bank: '🏦',
+        cash: '💵',
+        ewallet: '📱',
+        investment: '📈',
     };
 
-    return props.walletTypes.find(t => t.name === type)?.icon || defaults[type] || '💰';
+    return (
+        props.walletTypes.find((t) => t.name === type)?.icon ||
+        defaults[type] ||
+        '💰'
+    );
 };
 
 const formatCurrency = (value: number) => {
@@ -340,26 +374,24 @@ const formatDate = (dateString: string) => {
 
 const maskedBalance = (value: number) => {
     if (!showBalance.value) {
-return '•••••••';
-}
+        return '•••••••';
+    }
 
     return formatCurrency(value);
 };
 
-
-
 const activeChartTab = ref<'cashflow' | 'categories' | 'ai'>('cashflow');
 
 const weeklyChartData = computed(() => {
-    const days = [];
+    const days: WeeklyChartDay[] = [];
     const today = new Date();
-    
+
     for (let i = 6; i >= 0; i--) {
         const d = new Date();
         d.setDate(today.getDate() - i);
         const dateStr = d.toISOString().split('T')[0];
         const label = d.toLocaleDateString('id-ID', { weekday: 'short' });
-        
+
         days.push({
             date: dateStr,
             label,
@@ -367,10 +399,10 @@ const weeklyChartData = computed(() => {
             expense: 0,
         });
     }
-    
-    props.recentTransactions.forEach(t => {
+
+    props.recentTransactions.forEach((t) => {
         const tDate = t.date;
-        const day = days.find(d => d.date === tDate);
+        const day = days.find((d) => d.date === tDate);
 
         if (day) {
             const amt = parseFloat(t.amount);
@@ -382,19 +414,19 @@ const weeklyChartData = computed(() => {
             }
         }
     });
-    
+
     let maxVal = 100000;
-    days.forEach(d => {
+    days.forEach((d) => {
         if (d.income > maxVal) {
-maxVal = d.income;
-}
+            maxVal = d.income;
+        }
 
         if (d.expense > maxVal) {
-maxVal = d.expense;
-}
+            maxVal = d.expense;
+        }
     });
-    
-    return days.map(d => ({
+
+    return days.map((d) => ({
         ...d,
         incomeHeight: maxVal > 0 ? (d.income / maxVal) * 100 : 0,
         expenseHeight: maxVal > 0 ? (d.expense / maxVal) * 100 : 0,
@@ -404,20 +436,21 @@ maxVal = d.expense;
 const donutChartSegments = computed(() => {
     let accumulatedPercentage = 0;
     const totalSpent = props.budgets.reduce((sum, b) => sum + b.spent, 0);
-    
+
     if (totalSpent === 0) {
-return [];
-}
-    
-    return props.budgets.map(b => {
+        return [];
+    }
+
+    return props.budgets.map((b) => {
         const percentage = (b.spent / totalSpent) * 100;
         const radius = 35;
         const circumference = 2 * Math.PI * radius;
         const strokeLength = (percentage / 100) * circumference;
-        const strokeOffset = circumference - (accumulatedPercentage / 100) * circumference;
-        
+        const strokeOffset =
+            circumference - (accumulatedPercentage / 100) * circumference;
+
         accumulatedPercentage += percentage;
-        
+
         return {
             ...b,
             percentage,
@@ -432,32 +465,56 @@ return [];
 const financialInsights = computed(() => {
     const income = props.stats.monthly_income || 0;
     const expense = props.stats.monthly_expense || 0;
-    
+
     const expenseRatio = income > 0 ? (expense / income) * 100 : 0;
     let healthStatus = 'Mulai Catat Transaksi';
-    let healthColor = 'text-gray-500 bg-gray-50 dark:bg-zinc-800/40 border border-gray-100 dark:border-zinc-800/50';
-    let healthAdvice = 'Silakan mulai catat pemasukan dan pengeluaran Anda bulan ini untuk mendapatkan analisis kesehatan keuangan.';
+    let healthColor =
+        'text-gray-500 bg-gray-50 dark:bg-zinc-800/40 border border-gray-100 dark:border-zinc-800/50';
+    let healthAdvice =
+        'Silakan mulai catat pemasukan dan pengeluaran Anda bulan ini untuk mendapatkan analisis kesehatan keuangan.';
 
     if (income > 0) {
         if (expenseRatio <= 50) {
             healthStatus = 'Sangat Sehat (Prima) 🌟';
-            healthColor = 'text-emerald-600 bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-100 dark:border-emerald-900/30';
-            healthAdvice = 'Luar biasa! Pengeluaran Anda di bawah 50% dari pendapatan. Anda berada di jalur keuangan yang sangat aman dan dapat mengalokasikan sisa dana untuk tabungan hari tua atau investasi.';
+            healthColor =
+                'text-emerald-600 bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-100 dark:border-emerald-900/30';
+            healthAdvice =
+                'Luar biasa! Pengeluaran Anda di bawah 50% dari pendapatan. Anda berada di jalur keuangan yang sangat aman dan dapat mengalokasikan sisa dana untuk tabungan hari tua atau investasi.';
         } else if (expenseRatio <= 70) {
             healthStatus = 'Cukup Sehat 👍';
-            healthColor = 'text-amber-600 bg-amber-50 dark:bg-amber-950/20 border border-amber-100 dark:border-amber-900/30';
-            healthAdvice = 'Keuangan Anda dalam kondisi stabil. Pengeluaran berkisar antara 50%-70% dari pendapatan. Cobalah kurangi pengeluaran keinginan (want) agar bisa mencapai rasio emas 50% untuk kebutuhan utama.';
+            healthColor =
+                'text-amber-600 bg-amber-50 dark:bg-amber-950/20 border border-amber-100 dark:border-amber-900/30';
+            healthAdvice =
+                'Keuangan Anda dalam kondisi stabil. Pengeluaran berkisar antara 50%-70% dari pendapatan. Cobalah kurangi pengeluaran keinginan (want) agar bisa mencapai rasio emas 50% untuk kebutuhan utama.';
         } else {
             healthStatus = 'Waspada (Overspending) ⚠️';
-            healthColor = 'text-rose-600 bg-rose-50 dark:bg-rose-950/20 border border-rose-100 dark:border-rose-900/30';
-            healthAdvice = 'Waspada! Pengeluaran Anda melebihi 70% pendapatan Anda. Hal ini berisiko membuat Anda kesulitan menabung atau bahkan terpaksa berhutang. Segera evaluasi dan pangkas pos pengeluaran non-esensial.';
+            healthColor =
+                'text-rose-600 bg-rose-50 dark:bg-rose-950/20 border border-rose-100 dark:border-rose-900/30';
+            healthAdvice =
+                'Waspada! Pengeluaran Anda melebihi 70% pendapatan Anda. Hal ini berisiko membuat Anda kesulitan menabung atau bahkan terpaksa berhutang. Segera evaluasi dan pangkas pos pengeluaran non-esensial.';
         }
     }
 
-    const dayNames = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
-    const spendingByDay: Record<number, number> = {0:0, 1:0, 2:0, 3:0, 4:0, 5:0, 6:0};
-    
-    (props.recentTransactions || []).forEach(t => {
+    const dayNames = [
+        'Minggu',
+        'Senin',
+        'Selasa',
+        'Rabu',
+        'Kamis',
+        'Jumat',
+        'Sabtu',
+    ];
+    const spendingByDay: Record<number, number> = {
+        0: 0,
+        1: 0,
+        2: 0,
+        3: 0,
+        4: 0,
+        5: 0,
+        6: 0,
+    };
+
+    (props.recentTransactions || []).forEach((t) => {
         if (t.type === 'expense') {
             const d = new Date(t.date);
             spendingByDay[d.getDay()] += parseFloat(t.amount);
@@ -474,11 +531,12 @@ const financialInsights = computed(() => {
         }
     }
 
-    const peakDayName = peakDayIndex !== -1 ? dayNames[peakDayIndex] : 'Belum Ada';
+    const peakDayName =
+        peakDayIndex !== -1 ? dayNames[peakDayIndex] : 'Belum Ada';
 
     let largestCatName = 'Belum Ada';
     let largestCatSpent = 0;
-    (props.budgets || []).forEach(b => {
+    (props.budgets || []).forEach((b) => {
         if (b.spent > largestCatSpent) {
             largestCatSpent = b.spent;
             largestCatName = b.category_name;
@@ -525,7 +583,11 @@ onMounted(() => {
         const urlParams = new URLSearchParams(window.location.search);
         const action = urlParams.get('action');
 
-        if (action === 'income' || action === 'expense' || action === 'transfer') {
+        if (
+            action === 'income' ||
+            action === 'expense' ||
+            action === 'transfer'
+        ) {
             openTransactionModal(action);
             const url = new URL(window.location.href);
             url.searchParams.delete('action');
@@ -541,29 +603,43 @@ onMounted(() => {
 
         <div class="dashboard-container">
             <!-- ─── Smart Onboarding Guide Banner ─── -->
-            <div 
-                v-if="showOnboardingGuide" 
-                class="relative overflow-hidden bg-gradient-to-r from-teal-500/10 via-emerald-500/5 to-indigo-500/10 dark:from-teal-950/20 dark:via-zinc-900/40 dark:to-indigo-950/20 border border-teal-100/40 dark:border-zinc-800 rounded-3xl p-6 shadow-sm mb-6 transition-all duration-300"
+            <div
+                v-if="showOnboardingGuide"
+                class="relative mb-6 overflow-hidden rounded-3xl border border-teal-100/40 bg-gradient-to-r from-teal-500/10 via-emerald-500/5 to-indigo-500/10 p-6 shadow-sm transition-all duration-300 dark:border-zinc-800 dark:from-teal-950/20 dark:via-zinc-900/40 dark:to-indigo-950/20"
             >
                 <!-- Decorative blurred orbs -->
-                <div class="absolute -top-12 -left-12 w-32 h-32 bg-teal-400/10 rounded-full blur-2xl pointer-events-none"></div>
-                <div class="absolute -bottom-12 -right-12 w-32 h-32 bg-indigo-400/10 rounded-full blur-2xl pointer-events-none"></div>
+                <div
+                    class="pointer-events-none absolute -top-12 -left-12 h-32 w-32 rounded-full bg-teal-400/10 blur-2xl"
+                ></div>
+                <div
+                    class="pointer-events-none absolute -right-12 -bottom-12 h-32 w-32 rounded-full bg-indigo-400/10 blur-2xl"
+                ></div>
 
-                <div class="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-                    <div class="space-y-2 flex-1">
+                <div
+                    class="relative z-10 flex flex-col items-start justify-between gap-6 md:flex-row md:items-center"
+                >
+                    <div class="flex-1 space-y-2">
                         <div class="flex items-center gap-2">
-                            <span class="flex h-2 w-2 rounded-full bg-teal-500 animate-ping"></span>
-                            <h3 class="text-sm font-black text-teal-800 dark:text-teal-400 flex items-center gap-1.5 uppercase tracking-wider">
+                            <span
+                                class="flex h-2 w-2 animate-ping rounded-full bg-teal-500"
+                            ></span>
+                            <h3
+                                class="flex items-center gap-1.5 text-sm font-black tracking-wider text-teal-800 uppercase dark:text-teal-400"
+                            >
                                 💡 Alur Cerdas Keuangan KasKita
                             </h3>
                         </div>
-                        <p class="text-xs text-gray-600 dark:text-gray-400 font-medium leading-relaxed max-w-3xl">
-                            Untuk mendapatkan hasil analisis keuangan dan budgeting yang maksimal di KasKita, ikuti alur emas 3-langkah berikut ini secara berurutan:
+                        <p
+                            class="max-w-3xl text-xs leading-relaxed font-medium text-gray-600 dark:text-gray-400"
+                        >
+                            Untuk mendapatkan hasil analisis keuangan dan
+                            budgeting yang maksimal di KasKita, ikuti alur emas
+                            3-langkah berikut ini secara berurutan:
                         </p>
                     </div>
-                    <button 
-                        @click="dismissOnboarding" 
-                        class="p-1.5 rounded-full hover:bg-gray-100 dark:hover:bg-zinc-800 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition cursor-pointer"
+                    <button
+                        @click="dismissOnboarding"
+                        class="cursor-pointer rounded-full p-1.5 text-gray-400 transition hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-zinc-800 dark:hover:text-gray-200"
                         title="Tutup Panduan"
                     >
                         <X class="h-4 w-4" />
@@ -571,48 +647,80 @@ onMounted(() => {
                 </div>
 
                 <!-- 3 Steps Grid -->
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6 relative z-10">
+                <div
+                    class="relative z-10 mt-6 grid grid-cols-1 gap-4 md:grid-cols-3"
+                >
                     <!-- Step 1 -->
-                    <div class="bg-white/80 dark:bg-zinc-900/50 backdrop-blur-md rounded-2xl p-4 border border-teal-100/50 dark:border-zinc-800/80 hover:shadow-md transition duration-200 flex gap-3.5 items-start">
-                        <div class="w-8 h-8 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-extrabold flex items-center justify-center text-xs shrink-0">
+                    <div
+                        class="flex items-start gap-3.5 rounded-2xl border border-teal-100/50 bg-white/80 p-4 backdrop-blur-md transition duration-200 hover:shadow-md dark:border-zinc-800/80 dark:bg-zinc-900/50"
+                    >
+                        <div
+                            class="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-emerald-500/10 text-xs font-extrabold text-emerald-600 dark:text-emerald-400"
+                        >
                             1
                         </div>
                         <div class="space-y-1">
-                            <h4 class="text-xs font-black text-gray-900 dark:text-white flex items-center gap-1">
+                            <h4
+                                class="flex items-center gap-1 text-xs font-black text-gray-900 dark:text-white"
+                            >
                                 Catat Pemasukan
                             </h4>
-                            <p class="text-[10px] text-gray-500 dark:text-gray-400 font-medium leading-relaxed">
-                                Catat gaji atau pendapatan awal bulan di tombol <strong>Pemasukan</strong> untuk mengisi saldo dompet Anda.
+                            <p
+                                class="text-[10px] leading-relaxed font-medium text-gray-500 dark:text-gray-400"
+                            >
+                                Catat gaji atau pendapatan awal bulan di tombol
+                                <strong>Pemasukan</strong> untuk mengisi saldo
+                                dompet Anda.
                             </p>
                         </div>
                     </div>
 
                     <!-- Step 2 -->
-                    <div class="bg-white/80 dark:bg-zinc-900/50 backdrop-blur-md rounded-2xl p-4 border border-teal-100/50 dark:border-zinc-800/80 hover:shadow-md transition duration-200 flex gap-3.5 items-start">
-                        <div class="w-8 h-8 rounded-xl bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 font-extrabold flex items-center justify-center text-xs shrink-0">
+                    <div
+                        class="flex items-start gap-3.5 rounded-2xl border border-teal-100/50 bg-white/80 p-4 backdrop-blur-md transition duration-200 hover:shadow-md dark:border-zinc-800/80 dark:bg-zinc-900/50"
+                    >
+                        <div
+                            class="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-indigo-500/10 text-xs font-extrabold text-indigo-600 dark:text-indigo-400"
+                        >
                             2
                         </div>
                         <div class="space-y-1">
-                            <h4 class="text-xs font-black text-gray-900 dark:text-white flex items-center gap-1">
+                            <h4
+                                class="flex items-center gap-1 text-xs font-black text-gray-900 dark:text-white"
+                            >
                                 Atur Anggaran (Budget)
                             </h4>
-                            <p class="text-[10px] text-gray-500 dark:text-gray-400 font-medium leading-relaxed">
-                                Alokasikan pendapatan tersebut ke batas pengeluaran kategori di menu <strong>Budgeting</strong> sebelum berbelanja.
+                            <p
+                                class="text-[10px] leading-relaxed font-medium text-gray-500 dark:text-gray-400"
+                            >
+                                Alokasikan pendapatan tersebut ke batas
+                                pengeluaran kategori di menu
+                                <strong>Budgeting</strong> sebelum berbelanja.
                             </p>
                         </div>
                     </div>
 
                     <!-- Step 3 -->
-                    <div class="bg-white/80 dark:bg-zinc-900/50 backdrop-blur-md rounded-2xl p-4 border border-teal-100/50 dark:border-zinc-800/80 hover:shadow-md transition duration-200 flex gap-3.5 items-start">
-                        <div class="w-8 h-8 rounded-xl bg-teal-500/10 text-teal-600 dark:text-teal-400 font-extrabold flex items-center justify-center text-xs shrink-0">
+                    <div
+                        class="flex items-start gap-3.5 rounded-2xl border border-teal-100/50 bg-white/80 p-4 backdrop-blur-md transition duration-200 hover:shadow-md dark:border-zinc-800/80 dark:bg-zinc-900/50"
+                    >
+                        <div
+                            class="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-teal-500/10 text-xs font-extrabold text-teal-600 dark:text-teal-400"
+                        >
                             3
                         </div>
                         <div class="space-y-1">
-                            <h4 class="text-xs font-black text-gray-900 dark:text-white flex items-center gap-1">
+                            <h4
+                                class="flex items-center gap-1 text-xs font-black text-gray-900 dark:text-white"
+                            >
                                 Catat Belanja & Unduh PDF
                             </h4>
-                            <p class="text-[10px] text-gray-500 dark:text-gray-400 font-medium leading-relaxed">
-                                Catat pengeluaran harian, dan unduh laporan PDF bulanan bergrafis premium untuk dianalisis oleh AI lain!
+                            <p
+                                class="text-[10px] leading-relaxed font-medium text-gray-500 dark:text-gray-400"
+                            >
+                                Catat pengeluaran harian, dan unduh laporan PDF
+                                bulanan bergrafis premium untuk dianalisis oleh
+                                AI lain!
                             </p>
                         </div>
                     </div>
@@ -645,12 +753,20 @@ onMounted(() => {
                         <div class="balance-hero-stats">
                             <div class="balance-stat balance-stat--income">
                                 <ArrowUpRight class="h-3.5 w-3.5" />
-                                <span>{{ showBalance ? formatCurrency(stats.monthly_income) : '•••' }}</span>
+                                <span>{{
+                                    showBalance
+                                        ? formatCurrency(stats.monthly_income)
+                                        : '•••'
+                                }}</span>
                             </div>
                             <div class="balance-stat-divider"></div>
                             <div class="balance-stat balance-stat--expense">
                                 <ArrowDownRight class="h-3.5 w-3.5" />
-                                <span>{{ showBalance ? formatCurrency(stats.monthly_expense) : '•••' }}</span>
+                                <span>{{
+                                    showBalance
+                                        ? formatCurrency(stats.monthly_expense)
+                                        : '•••'
+                                }}</span>
                             </div>
                         </div>
                     </div>
@@ -663,19 +779,28 @@ onMounted(() => {
 
             <!-- ─── Quick Actions ─── -->
             <div class="quick-actions">
-                <button @click="openTransactionModal('income')" class="quick-action-item">
+                <button
+                    @click="openTransactionModal('income')"
+                    class="quick-action-item"
+                >
                     <div class="quick-action-icon quick-action-icon--income">
                         <ArrowUpRight class="h-5 w-5" />
                     </div>
                     <span class="quick-action-label">Pemasukan</span>
                 </button>
-                <button @click="openTransactionModal('expense')" class="quick-action-item">
+                <button
+                    @click="openTransactionModal('expense')"
+                    class="quick-action-item"
+                >
                     <div class="quick-action-icon quick-action-icon--expense">
                         <ArrowDownRight class="h-5 w-5" />
                     </div>
                     <span class="quick-action-label">Pengeluaran</span>
                 </button>
-                <button @click="openTransactionModal('transfer')" class="quick-action-item">
+                <button
+                    @click="openTransactionModal('transfer')"
+                    class="quick-action-item"
+                >
                     <div class="quick-action-icon quick-action-icon--transfer">
                         <Sparkles class="h-5 w-5" />
                     </div>
@@ -690,46 +815,59 @@ onMounted(() => {
             </div>
 
             <!-- ─── Charts Section ─── -->
-            <div class="bg-white dark:bg-zinc-900 rounded-3xl border border-gray-100 dark:border-zinc-800 p-6 shadow-sm mb-6 space-y-6">
-                <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div
+                class="mb-6 space-y-6 rounded-3xl border border-gray-100 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900"
+            >
+                <div
+                    class="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center"
+                >
                     <div>
-                        <h3 class="text-lg font-black text-gray-900 dark:text-white flex items-center gap-2">
+                        <h3
+                            class="flex items-center gap-2 text-lg font-black text-gray-900 dark:text-white"
+                        >
                             📊 Analisis Keuangan Keluarga
                         </h3>
-                        <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Pantau dan kelola arus kas keluarga Anda secara interaktif</p>
+                        <p
+                            class="mt-1 text-xs text-gray-500 dark:text-gray-400"
+                        >
+                            Pantau dan kelola arus kas keluarga Anda secara
+                            interaktif
+                        </p>
                     </div>
 
                     <!-- Tab Switcher -->
-                    <div class="flex bg-gray-100 dark:bg-zinc-800 p-1 rounded-xl self-stretch sm:self-auto">
-                        <button 
-                            @click="activeChartTab = 'cashflow'" 
+                    <div
+                        class="flex self-stretch rounded-xl bg-gray-100 p-1 sm:self-auto dark:bg-zinc-800"
+                    >
+                        <button
+                            @click="activeChartTab = 'cashflow'"
                             :class="[
-                                'flex-1 sm:flex-initial px-4 py-2 rounded-lg text-xs font-bold transition cursor-pointer',
-                                activeChartTab === 'cashflow' 
-                                    ? 'bg-white dark:bg-zinc-700 text-gray-900 dark:text-white shadow-sm' 
-                                    : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+                                'flex-1 cursor-pointer rounded-lg px-4 py-2 text-xs font-bold transition sm:flex-initial',
+                                activeChartTab === 'cashflow'
+                                    ? 'bg-white text-gray-900 shadow-sm dark:bg-zinc-700 dark:text-white'
+                                    : 'text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white',
                             ]"
                         >
                             📈 Tren Cashflow
                         </button>
-                        <button 
-                            @click="activeChartTab = 'categories'" 
+                        <button
+                            @click="activeChartTab = 'categories'"
                             :class="[
-                                'flex-1 sm:flex-initial px-4 py-2 rounded-lg text-xs font-bold transition cursor-pointer',
-                                activeChartTab === 'categories' 
-                                    ? 'bg-white dark:bg-zinc-700 text-gray-900 dark:text-white shadow-sm' 
-                                    : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+                                'flex-1 cursor-pointer rounded-lg px-4 py-2 text-xs font-bold transition sm:flex-initial',
+                                activeChartTab === 'categories'
+                                    ? 'bg-white text-gray-900 shadow-sm dark:bg-zinc-700 dark:text-white'
+                                    : 'text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white',
                             ]"
                         >
                             🍕 Alokasi Kategori
                         </button>
-                        <button 
-                            @click="activeChartTab = 'ai'" 
+                        <button
+                            @click="activeChartTab = 'ai'"
                             :class="[
-                                'flex-1 sm:flex-initial px-4 py-2 rounded-lg text-xs font-bold transition cursor-pointer',
-                                activeChartTab === 'ai' 
-                                    ? 'bg-white dark:bg-zinc-700 text-gray-900 dark:text-white shadow-sm' 
-                                    : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+                                'flex-1 cursor-pointer rounded-lg px-4 py-2 text-xs font-bold transition sm:flex-initial',
+                                activeChartTab === 'ai'
+                                    ? 'bg-white text-gray-900 shadow-sm dark:bg-zinc-700 dark:text-white'
+                                    : 'text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white',
                             ]"
                         >
                             🤖 AI Rekomendasi
@@ -741,46 +879,70 @@ onMounted(() => {
                 <div v-show="activeChartTab === 'cashflow'" class="space-y-4">
                     <!-- Legend -->
                     <div class="flex items-center gap-4 text-xs font-semibold">
-                        <div class="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400">
-                            <span class="w-3 h-3 rounded-full bg-emerald-500"></span>
+                        <div
+                            class="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400"
+                        >
+                            <span
+                                class="h-3 w-3 rounded-full bg-emerald-500"
+                            ></span>
                             <span>Pemasukan</span>
                         </div>
-                        <div class="flex items-center gap-1.5 text-rose-600 dark:text-rose-400">
-                            <span class="w-3 h-3 rounded-full bg-rose-500"></span>
+                        <div
+                            class="flex items-center gap-1.5 text-rose-600 dark:text-rose-400"
+                        >
+                            <span
+                                class="h-3 w-3 rounded-full bg-rose-500"
+                            ></span>
                             <span>Pengeluaran</span>
                         </div>
                     </div>
 
                     <!-- Bars Visualizer -->
-                    <div class="grid grid-cols-7 gap-2 sm:gap-4 h-48 pt-4 items-end border-b border-gray-100 dark:border-zinc-800">
-                        <div 
-                            v-for="day in weeklyChartData" 
-                            :key="day.date" 
-                            class="flex flex-col items-center h-full justify-end group relative"
+                    <div
+                        class="grid h-48 grid-cols-7 items-end gap-2 border-b border-gray-100 pt-4 sm:gap-4 dark:border-zinc-800"
+                    >
+                        <div
+                            v-for="day in weeklyChartData"
+                            :key="day.date"
+                            class="group relative flex h-full flex-col items-center justify-end"
                         >
                             <!-- Tooltip on Hover -->
-                            <div class="absolute bottom-full mb-2 bg-gray-900 text-white text-[10px] p-2 rounded-lg opacity-0 group-hover:opacity-100 transition duration-200 pointer-events-none z-10 shadow-lg whitespace-nowrap min-w-32 space-y-0.5">
-                                <p class="font-extrabold text-gray-300 border-b border-gray-800 pb-1 mb-1">{{ day.label }} ({{ formatDate(day.date) }})</p>
-                                <p class="text-emerald-400 font-extrabold">🟢 +{{ formatCurrency(day.income) }}</p>
-                                <p class="text-rose-400 font-extrabold">🔴 -{{ formatCurrency(day.expense) }}</p>
+                            <div
+                                class="pointer-events-none absolute bottom-full z-10 mb-2 min-w-32 space-y-0.5 rounded-lg bg-gray-900 p-2 text-[10px] whitespace-nowrap text-white opacity-0 shadow-lg transition duration-200 group-hover:opacity-100"
+                            >
+                                <p
+                                    class="mb-1 border-b border-gray-800 pb-1 font-extrabold text-gray-300"
+                                >
+                                    {{ day.label }} ({{ formatDate(day.date) }})
+                                </p>
+                                <p class="font-extrabold text-emerald-400">
+                                    🟢 +{{ formatCurrency(day.income) }}
+                                </p>
+                                <p class="font-extrabold text-rose-400">
+                                    🔴 -{{ formatCurrency(day.expense) }}
+                                </p>
                             </div>
 
                             <!-- Bars Container -->
-                            <div class="flex items-end gap-1 sm:gap-2 w-full h-full justify-center">
+                            <div
+                                class="flex h-full w-full items-end justify-center gap-1 sm:gap-2"
+                            >
                                 <!-- Income Bar -->
-                                <div 
-                                    class="w-2 sm:w-3 bg-gradient-to-t from-emerald-500 to-teal-400 rounded-t-md transition-all duration-500 ease-out hover:opacity-80"
+                                <div
+                                    class="w-2 rounded-t-md bg-gradient-to-t from-emerald-500 to-teal-400 transition-all duration-500 ease-out hover:opacity-80 sm:w-3"
                                     :style="{ height: `${day.incomeHeight}%` }"
                                 ></div>
                                 <!-- Expense Bar -->
-                                <div 
-                                    class="w-2 sm:w-3 bg-gradient-to-t from-rose-500 to-orange-400 rounded-t-md transition-all duration-500 ease-out hover:opacity-80"
+                                <div
+                                    class="w-2 rounded-t-md bg-gradient-to-t from-rose-500 to-orange-400 transition-all duration-500 ease-out hover:opacity-80 sm:w-3"
                                     :style="{ height: `${day.expenseHeight}%` }"
                                 ></div>
                             </div>
 
                             <!-- X-Axis Label -->
-                            <span class="text-[10px] font-bold text-gray-500 dark:text-gray-400 mt-2 truncate max-w-full">
+                            <span
+                                class="mt-2 max-w-full truncate text-[10px] font-bold text-gray-500 dark:text-gray-400"
+                            >
                                 {{ day.label }}
                             </span>
                         </div>
@@ -788,137 +950,315 @@ onMounted(() => {
                 </div>
 
                 <!-- Tab 2: Allocation Donut Chart -->
-                <div v-show="activeChartTab === 'categories'" class="flex flex-col md:flex-row items-center justify-center gap-8 md:gap-16 py-4">
-                    <div v-if="donutChartSegments.length > 0" class="relative w-44 h-44 shrink-0 flex items-center justify-center">
-                        <svg class="w-full h-full -rotate-90" viewBox="0 0 100 100">
+                <div
+                    v-show="activeChartTab === 'categories'"
+                    class="flex flex-col items-center justify-center gap-8 py-4 md:flex-row md:gap-16"
+                >
+                    <div
+                        v-if="donutChartSegments.length > 0"
+                        class="relative flex h-44 w-44 shrink-0 items-center justify-center"
+                    >
+                        <svg
+                            class="h-full w-full -rotate-90"
+                            viewBox="0 0 100 100"
+                        >
                             <!-- Background Circle -->
-                            <circle cx="50" cy="50" r="35" fill="transparent" class="stroke-gray-100 dark:stroke-zinc-800" stroke-width="12" />
+                            <circle
+                                cx="50"
+                                cy="50"
+                                r="35"
+                                fill="transparent"
+                                class="stroke-gray-100 dark:stroke-zinc-800"
+                                stroke-width="12"
+                            />
                             <!-- Segment Circles -->
-                            <circle 
+                            <circle
                                 v-for="seg in donutChartSegments"
                                 :key="seg.id"
-                                cx="50" 
-                                cy="50" 
-                                r="35" 
-                                fill="transparent" 
-                                :stroke="seg.color" 
-                                stroke-width="12" 
-                                :stroke-dasharray="seg.circumference" 
+                                cx="50"
+                                cy="50"
+                                r="35"
+                                fill="transparent"
+                                :stroke="seg.color"
+                                stroke-width="12"
+                                :stroke-dasharray="seg.circumference"
                                 :stroke-dashoffset="seg.strokeOffset"
-                                class="transition-all duration-500 hover:scale-105 origin-center cursor-pointer"
+                                class="origin-center cursor-pointer transition-all duration-500 hover:scale-105"
                                 :title="`${seg.category_name}: ${seg.percentage.toFixed(1)}%`"
                             />
                         </svg>
-                        <div class="absolute flex flex-col items-center justify-center text-center">
-                            <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Total</span>
-                            <span class="text-xs font-black text-gray-900 dark:text-white mt-0.5 truncate max-w-[120px]">
-                                {{ formatCurrency(budgets.reduce((sum, b) => sum + b.spent, 0)) }}
+                        <div
+                            class="absolute flex flex-col items-center justify-center text-center"
+                        >
+                            <span
+                                class="text-[10px] font-bold tracking-wider text-gray-400 uppercase"
+                                >Total</span
+                            >
+                            <span
+                                class="mt-0.5 max-w-[120px] truncate text-xs font-black text-gray-900 dark:text-white"
+                            >
+                                {{
+                                    formatCurrency(
+                                        budgets.reduce(
+                                            (sum, b) => sum + b.spent,
+                                            0,
+                                        ),
+                                    )
+                                }}
                             </span>
                         </div>
                     </div>
 
                     <!-- Category Legend List -->
-                    <div class="flex-1 w-full space-y-3">
-                        <div v-if="budgets.length === 0" class="text-center py-6 text-xs font-semibold text-gray-400">
+                    <div class="w-full flex-1 space-y-3">
+                        <div
+                            v-if="budgets.length === 0"
+                            class="py-6 text-center text-xs font-semibold text-gray-400"
+                        >
                             Belum ada anggaran pengeluaran tercatat bulan ini.
                         </div>
-                        <div 
+                        <div
                             v-else
-                            v-for="b in budgets" 
-                            :key="b.id" 
-                            class="flex items-center justify-between p-2 rounded-xl hover:bg-gray-50 dark:hover:bg-zinc-800/40 transition"
+                            v-for="b in budgets"
+                            :key="b.id"
+                            class="flex items-center justify-between rounded-xl p-2 transition hover:bg-gray-50 dark:hover:bg-zinc-800/40"
                         >
                             <div class="flex items-center gap-3">
-                                <span class="w-3.5 h-3.5 rounded-full shrink-0" :style="{ backgroundColor: b.category_color }"></span>
-                                <span class="text-xs font-extrabold text-gray-700 dark:text-gray-300">{{ b.category_name }}</span>
+                                <span
+                                    class="h-3.5 w-3.5 shrink-0 rounded-full"
+                                    :style="{
+                                        backgroundColor: b.category_color,
+                                    }"
+                                ></span>
+                                <span
+                                    class="text-xs font-extrabold text-gray-700 dark:text-gray-300"
+                                    >{{ b.category_name }}</span
+                                >
                             </div>
                             <div class="flex items-center gap-4">
-                                <span class="text-xs font-bold text-gray-900 dark:text-white">{{ formatCurrency(b.spent) }}</span>
-                                <span class="text-[10px] font-extrabold bg-gray-100 dark:bg-zinc-800 px-2 py-0.5 rounded-md text-gray-500 dark:text-gray-400 shrink-0">
-                                    {{ budgets.reduce((sum, x) => sum + x.spent, 0) > 0 ? ((b.spent / budgets.reduce((sum, x) => sum + x.spent, 0)) * 100).toFixed(0) : 0 }}%
+                                <span
+                                    class="text-xs font-bold text-gray-900 dark:text-white"
+                                    >{{ formatCurrency(b.spent) }}</span
+                                >
+                                <span
+                                    class="shrink-0 rounded-md bg-gray-100 px-2 py-0.5 text-[10px] font-extrabold text-gray-500 dark:bg-zinc-800 dark:text-gray-400"
+                                >
+                                    {{
+                                        budgets.reduce(
+                                            (sum, x) => sum + x.spent,
+                                            0,
+                                        ) > 0
+                                            ? (
+                                                  (b.spent /
+                                                      budgets.reduce(
+                                                          (sum, x) =>
+                                                              sum + x.spent,
+                                                          0,
+                                                      )) *
+                                                  100
+                                              ).toFixed(0)
+                                            : 0
+                                    }}%
                                 </span>
                             </div>
                         </div>
                     </div>
                 </div>
                 <!-- Tab 3: KasKita AI Financial Audit Section -->
-                <div v-show="activeChartTab === 'ai'" class="bg-gradient-to-br from-violet-600 to-indigo-700 rounded-3xl p-6 text-white shadow-lg space-y-5 relative overflow-hidden mt-2">
+                <div
+                    v-show="activeChartTab === 'ai'"
+                    class="relative mt-2 space-y-5 overflow-hidden rounded-3xl bg-gradient-to-br from-violet-600 to-indigo-700 p-6 text-white shadow-lg"
+                >
                     <!-- Background Glowing Orbs -->
-                    <div class="absolute -top-10 -right-10 w-40 h-44 bg-white/10 rounded-full blur-2xl pointer-events-none"></div>
-                    <div class="absolute -bottom-10 -left-10 w-40 h-44 bg-indigo-500/20 rounded-full blur-2xl pointer-events-none"></div>
+                    <div
+                        class="pointer-events-none absolute -top-10 -right-10 h-44 w-40 rounded-full bg-white/10 blur-2xl"
+                    ></div>
+                    <div
+                        class="pointer-events-none absolute -bottom-10 -left-10 h-44 w-40 rounded-full bg-indigo-500/20 blur-2xl"
+                    ></div>
 
-                    <div class="flex items-center justify-between relative z-10">
+                    <div
+                        class="relative z-10 flex items-center justify-between"
+                    >
                         <div class="flex items-center gap-3">
-                            <div class="w-10 h-10 bg-white/15 backdrop-blur-md rounded-2xl flex items-center justify-center animate-pulse text-xl">
+                            <div
+                                class="flex h-10 w-10 animate-pulse items-center justify-center rounded-2xl bg-white/15 text-xl backdrop-blur-md"
+                            >
                                 🤖
                             </div>
                             <div>
-                                <h3 class="text-sm font-black tracking-tight">KasKita AI - Asisten Keuangan Pintar</h3>
-                                <p class="text-[9px] text-indigo-200 font-semibold mt-0.5">Analisis Kesehatan Keuangan Berdasarkan Aturan Emas Finansial</p>
+                                <h3 class="text-sm font-black tracking-tight">
+                                    KasKita AI - Asisten Keuangan Pintar
+                                </h3>
+                                <p
+                                    class="mt-0.5 text-[9px] font-semibold text-indigo-200"
+                                >
+                                    Analisis Kesehatan Keuangan Berdasarkan
+                                    Aturan Emas Finansial
+                                </p>
                             </div>
                         </div>
                     </div>
 
                     <!-- Main Analysis Metrics -->
-                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 relative z-10">
+                    <div
+                        class="relative z-10 grid grid-cols-1 gap-4 sm:grid-cols-3"
+                    >
                         <!-- Health Audit Status -->
-                        <div class="bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/15 space-y-1">
-                            <span class="text-[9px] font-black uppercase tracking-wider text-indigo-200">Kesehatan Arus Kas</span>
-                            <div class="text-sm font-black pt-1">{{ financialInsights.healthStatus }}</div>
-                            <div class="text-[10px] text-white/80 font-medium">Rasio Belanja: {{ financialInsights.expenseRatio.toFixed(1) }}%</div>
+                        <div
+                            class="space-y-1 rounded-2xl border border-white/15 bg-white/10 p-4 backdrop-blur-md"
+                        >
+                            <span
+                                class="text-[9px] font-black tracking-wider text-indigo-200 uppercase"
+                                >Kesehatan Arus Kas</span
+                            >
+                            <div class="pt-1 text-sm font-black">
+                                {{ financialInsights.healthStatus }}
+                            </div>
+                            <div class="text-[10px] font-medium text-white/80">
+                                Rasio Belanja:
+                                {{ financialInsights.expenseRatio.toFixed(1) }}%
+                            </div>
                         </div>
 
                         <!-- Peak Spending Day -->
-                        <div class="bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/15 space-y-1">
-                            <span class="text-[9px] font-black uppercase tracking-wider text-indigo-200">Hari Pengeluaran Tertinggi</span>
-                            <div class="text-sm font-black pt-1">🎬 {{ financialInsights.peakDayName }}</div>
-                            <div class="text-[10px] text-white/80 font-medium" v-if="financialInsights.peakDayAmount > 0">
-                                Terbelanja: {{ formatCurrency(financialInsights.peakDayAmount) }}
+                        <div
+                            class="space-y-1 rounded-2xl border border-white/15 bg-white/10 p-4 backdrop-blur-md"
+                        >
+                            <span
+                                class="text-[9px] font-black tracking-wider text-indigo-200 uppercase"
+                                >Hari Pengeluaran Tertinggi</span
+                            >
+                            <div class="pt-1 text-sm font-black">
+                                🎬 {{ financialInsights.peakDayName }}
                             </div>
-                            <div class="text-[10px] text-white/80 font-medium" v-else>Tidak ada pengeluaran</div>
+                            <div
+                                class="text-[10px] font-medium text-white/80"
+                                v-if="financialInsights.peakDayAmount > 0"
+                            >
+                                Terbelanja:
+                                {{
+                                    formatCurrency(
+                                        financialInsights.peakDayAmount,
+                                    )
+                                }}
+                            </div>
+                            <div
+                                class="text-[10px] font-medium text-white/80"
+                                v-else
+                            >
+                                Tidak ada pengeluaran
+                            </div>
                         </div>
 
                         <!-- Top Expense Category -->
-                        <div class="bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/15 space-y-1">
-                            <span class="text-[9px] font-black uppercase tracking-wider text-indigo-200">Kategori Terboros</span>
-                            <div class="text-sm font-black pt-1 truncate">🏷️ {{ financialInsights.largestCatName }}</div>
-                            <div class="text-[10px] text-white/80 font-medium" v-if="financialInsights.largestCatSpent > 0">
-                                Total: {{ formatCurrency(financialInsights.largestCatSpent) }}
+                        <div
+                            class="space-y-1 rounded-2xl border border-white/15 bg-white/10 p-4 backdrop-blur-md"
+                        >
+                            <span
+                                class="text-[9px] font-black tracking-wider text-indigo-200 uppercase"
+                                >Kategori Terboros</span
+                            >
+                            <div class="truncate pt-1 text-sm font-black">
+                                🏷️ {{ financialInsights.largestCatName }}
                             </div>
-                            <div class="text-[10px] text-white/80 font-medium" v-else>Belum ada data</div>
+                            <div
+                                class="text-[10px] font-medium text-white/80"
+                                v-if="financialInsights.largestCatSpent > 0"
+                            >
+                                Total:
+                                {{
+                                    formatCurrency(
+                                        financialInsights.largestCatSpent,
+                                    )
+                                }}
+                            </div>
+                            <div
+                                class="text-[10px] font-medium text-white/80"
+                                v-else
+                            >
+                                Belum ada data
+                            </div>
                         </div>
                     </div>
 
                     <!-- AI Advice Callout Box -->
-                    <div class="bg-white/15 backdrop-blur-md rounded-2xl p-4 border border-white/10 relative z-10 space-y-2">
-                        <p class="text-[10px] font-black uppercase tracking-widest text-indigo-100 flex items-center gap-1.5">
+                    <div
+                        class="relative z-10 space-y-2 rounded-2xl border border-white/10 bg-white/15 p-4 backdrop-blur-md"
+                    >
+                        <p
+                            class="flex items-center gap-1.5 text-[10px] font-black tracking-widest text-indigo-100 uppercase"
+                        >
                             💡 Rekomendasi Finansial Anda
                         </p>
-                        <p class="text-xs font-semibold leading-relaxed text-indigo-50">
+                        <p
+                            class="text-xs leading-relaxed font-semibold text-indigo-50"
+                        >
                             {{ financialInsights.healthAdvice }}
                         </p>
                     </div>
 
                     <!-- Financial Golden Rule Aligner (50/30/20 Rule recommendation) -->
-                    <div v-if="stats.monthly_income > 0" class="bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/10 relative z-10 space-y-3">
-                        <p class="text-[10px] font-black uppercase tracking-widest text-indigo-100">
+                    <div
+                        v-if="stats.monthly_income > 0"
+                        class="relative z-10 space-y-3 rounded-2xl border border-white/10 bg-white/10 p-4 backdrop-blur-md"
+                    >
+                        <p
+                            class="text-[10px] font-black tracking-widest text-indigo-100 uppercase"
+                        >
                             📏 Target Alokasi Sesuai Aturan Emas (50/30/20):
                         </p>
-                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                        <div class="grid grid-cols-1 gap-2 sm:grid-cols-3">
                             <!-- Kebutuhan Pokok -->
-                            <div class="flex sm:flex-col justify-between sm:justify-center items-center sm:items-center bg-white/5 sm:bg-transparent px-3 py-2 rounded-xl sm:p-0 space-y-0 sm:space-y-0.5">
-                                <p class="text-[9px] font-black text-indigo-200">Kebutuhan Pokok (50%)</p>
-                                <p class="text-xs font-black">{{ formatCurrency(financialInsights.suggestedNeeds) }}</p>
+                            <div
+                                class="flex items-center justify-between space-y-0 rounded-xl bg-white/5 px-3 py-2 sm:flex-col sm:items-center sm:justify-center sm:space-y-0.5 sm:bg-transparent sm:p-0"
+                            >
+                                <p
+                                    class="text-[9px] font-black text-indigo-200"
+                                >
+                                    Kebutuhan Pokok (50%)
+                                </p>
+                                <p class="text-xs font-black">
+                                    {{
+                                        formatCurrency(
+                                            financialInsights.suggestedNeeds,
+                                        )
+                                    }}
+                                </p>
                             </div>
                             <!-- Keinginan -->
-                            <div class="flex sm:flex-col justify-between sm:justify-center items-center sm:items-center bg-white/5 sm:bg-transparent px-3 py-2 rounded-xl sm:p-0 space-y-0 sm:space-y-0.5">
-                                <p class="text-[9px] font-black text-indigo-200">Keinginan (30%)</p>
-                                <p class="text-xs font-black">{{ formatCurrency(financialInsights.suggestedWants) }}</p>
+                            <div
+                                class="flex items-center justify-between space-y-0 rounded-xl bg-white/5 px-3 py-2 sm:flex-col sm:items-center sm:justify-center sm:space-y-0.5 sm:bg-transparent sm:p-0"
+                            >
+                                <p
+                                    class="text-[9px] font-black text-indigo-200"
+                                >
+                                    Keinginan (30%)
+                                </p>
+                                <p class="text-xs font-black">
+                                    {{
+                                        formatCurrency(
+                                            financialInsights.suggestedWants,
+                                        )
+                                    }}
+                                </p>
                             </div>
                             <!-- Tabungan/Investasi -->
-                            <div class="flex sm:flex-col justify-between sm:justify-center items-center sm:items-center bg-white/5 sm:bg-transparent px-3 py-2 rounded-xl sm:p-0 space-y-0 sm:space-y-0.5">
-                                <p class="text-[9px] font-black text-indigo-200">Tabungan/Investasi (20%)</p>
-                                <p class="text-xs font-black text-emerald-300">{{ formatCurrency(financialInsights.suggestedSavings) }}</p>
+                            <div
+                                class="flex items-center justify-between space-y-0 rounded-xl bg-white/5 px-3 py-2 sm:flex-col sm:items-center sm:justify-center sm:space-y-0.5 sm:bg-transparent sm:p-0"
+                            >
+                                <p
+                                    class="text-[9px] font-black text-indigo-200"
+                                >
+                                    Tabungan/Investasi (20%)
+                                </p>
+                                <p class="text-xs font-black text-emerald-300">
+                                    {{
+                                        formatCurrency(
+                                            financialInsights.suggestedSavings,
+                                        )
+                                    }}
+                                </p>
                             </div>
                         </div>
                     </div>
@@ -930,7 +1270,12 @@ onMounted(() => {
                 <div class="dashboard-section">
                     <div class="section-header">
                         <h3 class="section-title">Dompet Saya</h3>
-                        <button @click="openWalletModal" class="section-link text-emerald-600 font-bold">+ Tambah</button>
+                        <button
+                            @click="openWalletModal"
+                            class="section-link font-bold text-emerald-600"
+                        >
+                            + Tambah
+                        </button>
                     </div>
 
                     <div class="wallet-list">
@@ -942,20 +1287,37 @@ onMounted(() => {
                             <div class="wallet-card-left">
                                 <div
                                     class="wallet-icon-wrap"
-                                    :style="{ backgroundColor: wallet.color + '15', color: wallet.color }"
+                                    :style="{
+                                        backgroundColor: wallet.color + '15',
+                                        color: wallet.color,
+                                    }"
                                 >
-                                    <span class="wallet-emoji">{{ getWalletEmoji(wallet.type) }}</span>
+                                    <span class="wallet-emoji">{{
+                                        getWalletEmoji(wallet.type)
+                                    }}</span>
                                 </div>
                                 <div class="wallet-info">
-                                    <span class="wallet-name">{{ wallet.name }}</span>
-                                    <span class="wallet-type">{{ wallet.type }}</span>
+                                    <span class="wallet-name">{{
+                                        wallet.name
+                                    }}</span>
+                                    <span class="wallet-type">{{
+                                        wallet.type
+                                    }}</span>
                                 </div>
                             </div>
                             <div class="flex items-center gap-3">
                                 <div class="wallet-balance">
-                                    {{ showBalance ? formatCurrency(wallet.balance) : '•••••' }}
+                                    {{
+                                        showBalance
+                                            ? formatCurrency(wallet.balance)
+                                            : '•••••'
+                                    }}
                                 </div>
-                                <button @click="deleteWallet(wallet)" class="text-red-500 opacity-60 hover:opacity-100 transition p-1" title="Hapus Dompet">
+                                <button
+                                    @click="deleteWallet(wallet)"
+                                    class="p-1 text-red-500 opacity-60 transition hover:opacity-100"
+                                    title="Hapus Dompet"
+                                >
                                     <Trash2 class="h-3.5 w-3.5" />
                                 </button>
                             </div>
@@ -966,7 +1328,11 @@ onMounted(() => {
                                 <WalletIcon class="h-8 w-8" />
                             </div>
                             <p class="empty-state-text">Belum ada dompet</p>
-                            <Button @click="openWalletModal" size="sm" class="empty-state-btn">
+                            <Button
+                                @click="openWalletModal"
+                                size="sm"
+                                class="empty-state-btn"
+                            >
                                 <Plus class="mr-1 h-4 w-4" />
                                 Tambah Dompet
                             </Button>
@@ -975,20 +1341,62 @@ onMounted(() => {
                 </div>
 
                 <!-- ─── Budget Overview ─── -->
-                <div v-if="budgets && budgets.length > 0" class="dashboard-section" style="grid-column: 1 / -1;">
+                <div
+                    v-if="budgets && budgets.length > 0"
+                    class="dashboard-section"
+                    style="grid-column: 1 / -1"
+                >
                     <div class="section-header">
                         <h3 class="section-title">💰 Budget Bulan Ini</h3>
-                        <Link href="/budget" class="section-link">Lihat Semua</Link>
+                        <Link href="/budget" class="section-link"
+                            >Lihat Semua</Link
+                        >
                     </div>
                     <div class="budget-overview-grid">
-                        <div v-for="b in budgets" :key="b.id" class="budget-mini-card">
+                        <div
+                            v-for="b in budgets"
+                            :key="b.id"
+                            class="budget-mini-card"
+                        >
                             <div class="budget-mini-top">
-                                <div class="budget-mini-dot" :style="{ background: b.category_color }"></div>
-                                <span class="budget-mini-name">{{ b.category_name }}</span>
-                                <span class="budget-mini-pct" :style="{ color: b.status === 'over' ? '#dc2626' : b.status === 'danger' ? '#ef4444' : b.status === 'warning' ? '#d97706' : '#059669' }">{{ b.percentage }}%</span>
+                                <div
+                                    class="budget-mini-dot"
+                                    :style="{ background: b.category_color }"
+                                ></div>
+                                <span class="budget-mini-name">{{
+                                    b.category_name
+                                }}</span>
+                                <span
+                                    class="budget-mini-pct"
+                                    :style="{
+                                        color:
+                                            b.status === 'over'
+                                                ? '#dc2626'
+                                                : b.status === 'danger'
+                                                  ? '#ef4444'
+                                                  : b.status === 'warning'
+                                                    ? '#d97706'
+                                                    : '#059669',
+                                    }"
+                                    >{{ b.percentage }}%</span
+                                >
                             </div>
                             <div class="budget-mini-bar">
-                                <div class="budget-mini-bar-fill" :style="{ width: Math.min(b.percentage, 100) + '%', background: b.status === 'over' ? '#dc2626' : b.status === 'danger' ? '#ef4444' : b.status === 'warning' ? '#f59e0b' : '#059669' }"></div>
+                                <div
+                                    class="budget-mini-bar-fill"
+                                    :style="{
+                                        width:
+                                            Math.min(b.percentage, 100) + '%',
+                                        background:
+                                            b.status === 'over'
+                                                ? '#dc2626'
+                                                : b.status === 'danger'
+                                                  ? '#ef4444'
+                                                  : b.status === 'warning'
+                                                    ? '#f59e0b'
+                                                    : '#059669',
+                                    }"
+                                ></div>
                             </div>
                             <div class="budget-mini-bottom">
                                 <span>{{ formatCurrency(b.spent) }}</span>
@@ -1014,32 +1422,55 @@ onMounted(() => {
                             <div class="tx-card-left">
                                 <div
                                     class="tx-icon-wrap"
-                                    :style="{ backgroundColor: (tx.category?.color || '#71717a') + '12' }"
+                                    :style="{
+                                        backgroundColor:
+                                            (tx.category?.color || '#71717a') +
+                                            '12',
+                                    }"
                                 >
                                     <History
                                         class="h-5 w-5"
-                                        :style="{ color: tx.category?.color || '#71717a' }"
+                                        :style="{
+                                            color:
+                                                tx.category?.color || '#71717a',
+                                        }"
                                     />
                                 </div>
                                 <div class="tx-info">
-                                    <span class="tx-name">{{ tx.category?.name || 'Lainnya' }}</span>
-                                    <span class="tx-note">{{ tx.note || 'Transaksi KasKita' }}</span>
+                                    <span class="tx-name">{{
+                                        tx.category?.name || 'Lainnya'
+                                    }}</span>
+                                    <span class="tx-note">{{
+                                        tx.note || 'Transaksi KasKita'
+                                    }}</span>
                                 </div>
                             </div>
                             <div class="tx-card-right">
                                 <span
                                     :class="[
                                         'tx-amount',
-                                        tx.type === 'income' ? 'tx-amount--income' : 'tx-amount--expense',
+                                        tx.type === 'income'
+                                            ? 'tx-amount--income'
+                                            : 'tx-amount--expense',
                                     ]"
                                 >
-                                    {{ tx.type === 'income' ? '+' : '-' }}{{ formatCurrency(Number(tx.amount)).replace('Rp', '') }}
+                                    {{ tx.type === 'income' ? '+' : '-'
+                                    }}{{
+                                        formatCurrency(
+                                            Number(tx.amount),
+                                        ).replace('Rp', '')
+                                    }}
                                 </span>
-                                <span class="tx-date">{{ formatDate(tx.date) }}</span>
+                                <span class="tx-date">{{
+                                    formatDate(tx.date)
+                                }}</span>
                             </div>
                         </div>
 
-                        <div v-if="recentTransactions.length === 0" class="empty-state">
+                        <div
+                            v-if="recentTransactions.length === 0"
+                            class="empty-state"
+                        >
                             <div class="empty-state-icon">
                                 <TrendingUp class="h-8 w-8" />
                             </div>
@@ -1057,60 +1488,117 @@ onMounted(() => {
         </div>
         <!-- Create Transaction Modal -->
         <Teleport to="body">
-            <div v-if="showTransactionModal" class="transaction-modal-overlay" @click.self="showTransactionModal = false">
+            <div
+                v-if="showTransactionModal"
+                class="transaction-modal-overlay"
+                @click.self="showTransactionModal = false"
+            >
                 <div class="transaction-modal">
                     <div class="transaction-modal-header">
                         <h3 class="transaction-modal-title">
-                            Catat {{ transactionModalType === 'income' ? 'Pemasukan' : (transactionModalType === 'expense' ? 'Pengeluaran' : 'Transfer') }} Baru
+                            Catat
+                            {{
+                                transactionModalType === 'income'
+                                    ? 'Pemasukan'
+                                    : transactionModalType === 'expense'
+                                      ? 'Pengeluaran'
+                                      : 'Transfer'
+                            }}
+                            Baru
                         </h3>
-                        <button @click="showTransactionModal = false" class="transaction-modal-close">
+                        <button
+                            @click="showTransactionModal = false"
+                            class="transaction-modal-close"
+                        >
                             <X class="h-5 w-5" />
                         </button>
                     </div>
 
-                    <form @submit.prevent="submitTransaction" class="transaction-modal-form">
+                    <form
+                        @submit.prevent="submitTransaction"
+                        class="transaction-modal-form"
+                    >
                         <!-- Premium Voice Input Feature -->
-                        <div class="p-3.5 border rounded-2xl flex items-center gap-3.5 transition-all duration-300 ease-in-out"
+                        <div
+                            class="flex items-center gap-3.5 rounded-2xl border p-3.5 transition-all duration-300 ease-in-out"
                             :class="[
-                                isListening ? 'bg-rose-50 border-rose-200 text-rose-900 shadow-inner shadow-rose-100/50 dark:bg-rose-950/20 dark:border-rose-900/40 dark:text-rose-200' : 
-                                isProcessingVoice ? 'bg-teal-50 border-teal-200 text-teal-900 animate-pulse dark:bg-teal-950/20 dark:border-teal-900/40 dark:text-teal-200' : 
-                                'bg-violet-50/50 border-violet-100 text-violet-900 dark:bg-zinc-900/50 dark:border-zinc-800 dark:text-zinc-300'
+                                isListening
+                                    ? 'border-rose-200 bg-rose-50 text-rose-900 shadow-inner shadow-rose-100/50 dark:border-rose-900/40 dark:bg-rose-950/20 dark:text-rose-200'
+                                    : isProcessingVoice
+                                      ? 'animate-pulse border-teal-200 bg-teal-50 text-teal-900 dark:border-teal-900/40 dark:bg-teal-950/20 dark:text-teal-200'
+                                      : 'border-violet-100 bg-violet-50/50 text-violet-900 dark:border-zinc-800 dark:bg-zinc-900/50 dark:text-zinc-300',
                             ]"
                         >
-                            <button 
-                                type="button" 
+                            <button
+                                type="button"
                                 @click="toggleListening"
-                                class="w-11 h-11 rounded-2xl shrink-0 flex items-center justify-center transition-all cursor-pointer duration-300"
+                                class="flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-2xl transition-all duration-300"
                                 :class="[
-                                    isListening ? 'bg-rose-500 text-white shadow-lg shadow-rose-300 animate-pulse scale-105 border-none dark:shadow-rose-950' : 
-                                    isProcessingVoice ? 'bg-teal-500 text-white border-none' : 
-                                    'bg-gradient-to-br from-violet-600 to-indigo-600 text-white shadow hover:shadow-md hover:scale-[1.02] border-none'
+                                    isListening
+                                        ? 'scale-105 animate-pulse border-none bg-rose-500 text-white shadow-lg shadow-rose-300 dark:shadow-rose-950'
+                                        : isProcessingVoice
+                                          ? 'border-none bg-teal-500 text-white'
+                                          : 'border-none bg-gradient-to-br from-violet-600 to-indigo-600 text-white shadow hover:scale-[1.02] hover:shadow-md',
                                 ]"
-                                :title="isListening ? 'Berhenti Merekam' : 'Catat Transaksi dengan Suara'"
+                                :title="
+                                    isListening
+                                        ? 'Berhenti Merekam'
+                                        : 'Catat Transaksi dengan Suara'
+                                "
                             >
-                                <MicOff v-if="isListening" class="h-4.5 w-4.5" />
+                                <MicOff
+                                    v-if="isListening"
+                                    class="h-4.5 w-4.5"
+                                />
                                 <Mic v-else class="h-4.5 w-4.5" />
                             </button>
-                            
+
                             <div class="flex-1 overflow-hidden pr-1">
-                                <p class="text-xs font-black tracking-tight leading-none uppercase flex items-center gap-1.5"
+                                <p
+                                    class="flex items-center gap-1.5 text-xs leading-none font-black tracking-tight uppercase"
                                     :class="[
-                                        isListening ? 'text-rose-600 dark:text-rose-400' : 
-                                        isProcessingVoice ? 'text-teal-600 dark:text-teal-400' : 
-                                        'text-violet-600 dark:text-violet-400'
+                                        isListening
+                                            ? 'text-rose-600 dark:text-rose-400'
+                                            : isProcessingVoice
+                                              ? 'text-teal-600 dark:text-teal-400'
+                                              : 'text-violet-600 dark:text-violet-400',
                                     ]"
                                 >
-                                    <span v-if="isListening" class="flex h-2 w-2 rounded-full bg-rose-500 animate-ping"></span>
-                                    {{ isListening ? 'Mendengarkan...' : (isProcessingVoice ? 'Menganalisis...' : '⚡ Pintasan Suara Cepat') }}
+                                    <span
+                                        v-if="isListening"
+                                        class="flex h-2 w-2 animate-ping rounded-full bg-rose-500"
+                                    ></span>
+                                    {{
+                                        isListening
+                                            ? 'Mendengarkan...'
+                                            : isProcessingVoice
+                                              ? 'Menganalisis...'
+                                              : '⚡ Pintasan Suara Cepat'
+                                    }}
                                 </p>
-                                
-                                <p class="text-[11px] font-semibold leading-tight truncate mt-1 text-gray-600 dark:text-gray-400"
-                                    :class="{'italic font-bold text-gray-800 dark:text-gray-100': voiceTranscript && !isListening && !isProcessingVoice}"
+
+                                <p
+                                    class="mt-1 truncate text-[11px] leading-tight font-semibold text-gray-600 dark:text-gray-400"
+                                    :class="{
+                                        'font-bold text-gray-800 italic dark:text-gray-100':
+                                            voiceTranscript &&
+                                            !isListening &&
+                                            !isProcessingVoice,
+                                    }"
                                 >
-                                    {{ isListening ? 'Katakan misal: "Makan bakso 25 ribu"' : (voiceTranscript ? `"${voiceTranscript}"` : 'Klik tombol mic untuk mendiktekan transaksi!') }}
+                                    {{
+                                        isListening
+                                            ? 'Katakan misal: "Makan bakso 25 ribu"'
+                                            : voiceTranscript
+                                              ? `"${voiceTranscript}"`
+                                              : 'Klik tombol mic untuk mendiktekan transaksi!'
+                                    }}
                                 </p>
-                                
-                                <p v-if="voiceError" class="text-[10px] text-rose-600 dark:text-rose-400 font-bold mt-0.5 leading-none">
+
+                                <p
+                                    v-if="voiceError"
+                                    class="mt-0.5 text-[10px] leading-none font-bold text-rose-600 dark:text-rose-400"
+                                >
                                     ⚠️ {{ voiceError }}
                                 </p>
                             </div>
@@ -1118,80 +1606,173 @@ onMounted(() => {
 
                         <!-- Amount -->
                         <div class="transaction-form-group">
-                            <label class="transaction-form-label">Jumlah (Rp)</label>
-                            <input 
-                                v-model="transactionForm.amount" 
-                                type="number" 
-                                min="1" 
-                                class="transaction-form-input" 
-                                placeholder="e.g. 50000" 
-                                required 
+                            <label class="transaction-form-label"
+                                >Jumlah (Rp)</label
+                            >
+                            <input
+                                v-model="transactionForm.amount"
+                                type="number"
+                                min="1"
+                                class="transaction-form-input"
+                                placeholder="e.g. 50000"
+                                required
                             />
-                            <p v-if="transactionForm.errors.amount" class="transaction-form-error">{{ transactionForm.errors.amount }}</p>
+                            <p
+                                v-if="transactionForm.errors.amount"
+                                class="transaction-form-error"
+                            >
+                                {{ transactionForm.errors.amount }}
+                            </p>
                         </div>
 
                         <!-- Source Wallet -->
                         <div class="transaction-form-group">
                             <label class="transaction-form-label">
-                                {{ transactionModalType === 'transfer' ? 'Dari Dompet (Asal)' : 'Dompet' }}
+                                {{
+                                    transactionModalType === 'transfer'
+                                        ? 'Dari Dompet (Asal)'
+                                        : 'Dompet'
+                                }}
                             </label>
-                            <select v-model="transactionForm.wallet_id" class="transaction-form-input" required>
-                                <option v-for="w in wallets" :key="w.id" :value="w.id">
-                                    {{ w.name }} (Sisa: {{ formatCurrency(w.balance) }})
+                            <select
+                                v-model="transactionForm.wallet_id"
+                                class="transaction-form-input"
+                                required
+                            >
+                                <option
+                                    v-for="w in wallets"
+                                    :key="w.id"
+                                    :value="w.id"
+                                >
+                                    {{ w.name }} (Sisa:
+                                    {{ formatCurrency(w.balance) }})
                                 </option>
                             </select>
-                            <p v-if="transactionForm.errors.wallet_id" class="transaction-form-error">{{ transactionForm.errors.wallet_id }}</p>
+                            <p
+                                v-if="transactionForm.errors.wallet_id"
+                                class="transaction-form-error"
+                            >
+                                {{ transactionForm.errors.wallet_id }}
+                            </p>
                         </div>
 
                         <!-- Target Wallet (only for transfers) -->
-                        <div v-if="transactionModalType === 'transfer'" class="transaction-form-group">
-                            <label class="transaction-form-label">Ke Dompet (Tujuan)</label>
-                            <select v-model="transactionForm.transfer_to_wallet_id" class="transaction-form-input" required>
-                                <option v-for="w in wallets" :key="w.id" :value="w.id">
-                                    {{ w.name }} (Sisa: {{ formatCurrency(w.balance) }})
+                        <div
+                            v-if="transactionModalType === 'transfer'"
+                            class="transaction-form-group"
+                        >
+                            <label class="transaction-form-label"
+                                >Ke Dompet (Tujuan)</label
+                            >
+                            <select
+                                v-model="transactionForm.transfer_to_wallet_id"
+                                class="transaction-form-input"
+                                required
+                            >
+                                <option
+                                    v-for="w in wallets"
+                                    :key="w.id"
+                                    :value="w.id"
+                                >
+                                    {{ w.name }} (Sisa:
+                                    {{ formatCurrency(w.balance) }})
                                 </option>
                             </select>
-                            <p v-if="transactionForm.errors.transfer_to_wallet_id" class="transaction-form-error">{{ transactionForm.errors.transfer_to_wallet_id }}</p>
+                            <p
+                                v-if="
+                                    transactionForm.errors.transfer_to_wallet_id
+                                "
+                                class="transaction-form-error"
+                            >
+                                {{
+                                    transactionForm.errors.transfer_to_wallet_id
+                                }}
+                            </p>
                         </div>
 
                         <!-- Category (only for income/expense) -->
-                        <div v-if="transactionModalType !== 'transfer'" class="transaction-form-group">
-                            <label class="transaction-form-label">Kategori</label>
-                            <select v-model="transactionForm.category_id" class="transaction-form-input" required>
-                                <option value="" disabled>Pilih Kategori...</option>
-                                <option v-for="c in categories.filter(cat => cat.type === transactionModalType)" :key="c.id" :value="c.id">
+                        <div
+                            v-if="transactionModalType !== 'transfer'"
+                            class="transaction-form-group"
+                        >
+                            <label class="transaction-form-label"
+                                >Kategori</label
+                            >
+                            <select
+                                v-model="transactionForm.category_id"
+                                class="transaction-form-input"
+                                required
+                            >
+                                <option value="" disabled>
+                                    Pilih Kategori...
+                                </option>
+                                <option
+                                    v-for="c in categories.filter(
+                                        (cat) =>
+                                            cat.type === transactionModalType,
+                                    )"
+                                    :key="c.id"
+                                    :value="c.id"
+                                >
                                     {{ c.name }}
                                 </option>
                             </select>
-                            <p v-if="transactionForm.errors.category_id" class="transaction-form-error">{{ transactionForm.errors.category_id }}</p>
+                            <p
+                                v-if="transactionForm.errors.category_id"
+                                class="transaction-form-error"
+                            >
+                                {{ transactionForm.errors.category_id }}
+                            </p>
                         </div>
 
                         <!-- Note -->
                         <div class="transaction-form-group">
-                            <label class="transaction-form-label">Keterangan / Catatan</label>
-                            <input 
-                                v-model="transactionForm.note" 
-                                type="text" 
-                                class="transaction-form-input" 
-                                placeholder="e.g. jajan soto, gaji bulanan" 
+                            <label class="transaction-form-label"
+                                >Keterangan / Catatan</label
+                            >
+                            <input
+                                v-model="transactionForm.note"
+                                type="text"
+                                class="transaction-form-input"
+                                placeholder="e.g. jajan soto, gaji bulanan"
                             />
-                            <p v-if="transactionForm.errors.note" class="transaction-form-error">{{ transactionForm.errors.note }}</p>
+                            <p
+                                v-if="transactionForm.errors.note"
+                                class="transaction-form-error"
+                            >
+                                {{ transactionForm.errors.note }}
+                            </p>
                         </div>
 
                         <!-- Date -->
                         <div class="transaction-form-group">
-                            <label class="transaction-form-label">Tanggal</label>
-                            <input 
-                                v-model="transactionForm.date" 
-                                type="date" 
-                                class="transaction-form-input" 
-                                required 
+                            <label class="transaction-form-label"
+                                >Tanggal</label
+                            >
+                            <input
+                                v-model="transactionForm.date"
+                                type="date"
+                                class="transaction-form-input"
+                                required
                             />
-                            <p v-if="transactionForm.errors.date" class="transaction-form-error">{{ transactionForm.errors.date }}</p>
+                            <p
+                                v-if="transactionForm.errors.date"
+                                class="transaction-form-error"
+                            >
+                                {{ transactionForm.errors.date }}
+                            </p>
                         </div>
 
-                        <button type="submit" :disabled="transactionForm.processing" class="transaction-form-submit">
-                            {{ transactionForm.processing ? 'Menyimpan...' : 'Simpan Transaksi' }}
+                        <button
+                            type="submit"
+                            :disabled="transactionForm.processing"
+                            class="transaction-form-submit"
+                        >
+                            {{
+                                transactionForm.processing
+                                    ? 'Menyimpan...'
+                                    : 'Simpan Transaksi'
+                            }}
                         </button>
                     </form>
                 </div>
@@ -1200,81 +1781,141 @@ onMounted(() => {
 
         <!-- Create Wallet Modal -->
         <Teleport to="body">
-            <div v-if="showWalletModal" class="transaction-modal-overlay" @click.self="showWalletModal = false">
+            <div
+                v-if="showWalletModal"
+                class="transaction-modal-overlay"
+                @click.self="showWalletModal = false"
+            >
                 <div class="transaction-modal">
                     <div class="transaction-modal-header">
-                        <h3 class="transaction-modal-title">Tambah Dompet Baru</h3>
-                        <button @click="showWalletModal = false" class="transaction-modal-close">
+                        <h3 class="transaction-modal-title">
+                            Tambah Dompet Baru
+                        </h3>
+                        <button
+                            @click="showWalletModal = false"
+                            class="transaction-modal-close"
+                        >
                             <X class="h-5 w-5" />
                         </button>
                     </div>
 
-                    <form @submit.prevent="submitWallet" class="transaction-modal-form">
+                    <form
+                        @submit.prevent="submitWallet"
+                        class="transaction-modal-form"
+                    >
                         <!-- Wallet Name -->
                         <div class="transaction-form-group">
-                            <label class="transaction-form-label">Nama Dompet</label>
-                            <input 
-                                v-model="walletForm.name" 
-                                type="text" 
-                                class="transaction-form-input" 
-                                placeholder="e.g. Bank BCA, Dompet Saku" 
-                                required 
+                            <label class="transaction-form-label"
+                                >Nama Dompet</label
+                            >
+                            <input
+                                v-model="walletForm.name"
+                                type="text"
+                                class="transaction-form-input"
+                                placeholder="e.g. Bank BCA, Dompet Saku"
+                                required
                             />
-                            <p v-if="walletForm.errors.name" class="transaction-form-error">{{ walletForm.errors.name }}</p>
+                            <p
+                                v-if="walletForm.errors.name"
+                                class="transaction-form-error"
+                            >
+                                {{ walletForm.errors.name }}
+                            </p>
                         </div>
 
                         <!-- Wallet Type -->
                         <div class="transaction-form-group">
                             <div class="flex items-center justify-between">
-                                <label class="transaction-form-label">Jenis Dompet</label>
-                                <button type="button" @click="showManageWalletTypesModal = true" class="text-xs text-emerald-600 font-bold hover:underline">
+                                <label class="transaction-form-label"
+                                    >Jenis Dompet</label
+                                >
+                                <button
+                                    type="button"
+                                    @click="showManageWalletTypesModal = true"
+                                    class="text-xs font-bold text-emerald-600 hover:underline"
+                                >
                                     + Kelola Jenis
                                 </button>
                             </div>
-                            <select v-model="walletForm.type" class="transaction-form-input" required>
-                                <option v-for="type in walletTypes" :key="type.id" :value="type.name">
+                            <select
+                                v-model="walletForm.type"
+                                class="transaction-form-input"
+                                required
+                            >
+                                <option
+                                    v-for="type in walletTypes"
+                                    :key="type.id"
+                                    :value="type.name"
+                                >
                                     {{ type.icon }} {{ type.name }}
                                 </option>
                             </select>
-                            <p v-if="walletForm.errors.type" class="transaction-form-error">{{ walletForm.errors.type }}</p>
+                            <p
+                                v-if="walletForm.errors.type"
+                                class="transaction-form-error"
+                            >
+                                {{ walletForm.errors.type }}
+                            </p>
                         </div>
 
                         <!-- Initial Balance -->
                         <div class="transaction-form-group">
-                            <label class="transaction-form-label">Saldo Awal (Rp)</label>
-                            <input 
-                                v-model="walletForm.balance" 
-                                type="number" 
-                                min="0" 
-                                class="transaction-form-input" 
-                                placeholder="e.g. 1000000" 
-                                required 
+                            <label class="transaction-form-label"
+                                >Saldo Awal (Rp)</label
+                            >
+                            <input
+                                v-model="walletForm.balance"
+                                type="number"
+                                min="0"
+                                class="transaction-form-input"
+                                placeholder="e.g. 1000000"
+                                required
                             />
-                            <p v-if="walletForm.errors.balance" class="transaction-form-error">{{ walletForm.errors.balance }}</p>
+                            <p
+                                v-if="walletForm.errors.balance"
+                                class="transaction-form-error"
+                            >
+                                {{ walletForm.errors.balance }}
+                            </p>
                         </div>
 
                         <!-- Theme Color -->
                         <div class="transaction-form-group">
-                            <label class="transaction-form-label">Warna Tema Dompet</label>
+                            <label class="transaction-form-label"
+                                >Warna Tema Dompet</label
+                            >
                             <div class="flex gap-2">
-                                <input 
-                                    v-model="walletForm.color" 
-                                    type="color" 
-                                    class="w-12 h-10 p-1 border rounded-lg cursor-pointer" 
+                                <input
+                                    v-model="walletForm.color"
+                                    type="color"
+                                    class="h-10 w-12 cursor-pointer rounded-lg border p-1"
                                 />
-                                <input 
-                                    v-model="walletForm.color" 
-                                    type="text" 
-                                    class="transaction-form-input flex-1" 
-                                    placeholder="#10b981" 
-                                    required 
+                                <input
+                                    v-model="walletForm.color"
+                                    type="text"
+                                    class="transaction-form-input flex-1"
+                                    placeholder="#10b981"
+                                    required
                                 />
                             </div>
-                            <p v-if="walletForm.errors.color" class="transaction-form-error">{{ walletForm.errors.color }}</p>
+                            <p
+                                v-if="walletForm.errors.color"
+                                class="transaction-form-error"
+                            >
+                                {{ walletForm.errors.color }}
+                            </p>
                         </div>
 
-                        <button type="submit" :disabled="walletForm.processing" class="transaction-form-submit">
-                            {{ walletForm.processing ? 'Menyimpan...' : 'Tambah Dompet' }}
+                        <button
+                            type="submit"
+                            :disabled="walletForm.processing"
+                            class="transaction-form-submit"
+                        >
+                            {{
+                                walletForm.processing
+                                    ? 'Menyimpan...'
+                                    : 'Tambah Dompet'
+                            }}
                         </button>
                     </form>
                 </div>
@@ -1283,38 +1924,84 @@ onMounted(() => {
 
         <!-- Manage Wallet Types Modal -->
         <Teleport to="body">
-            <div v-if="showManageWalletTypesModal" class="transaction-modal-overlay" @click.self="showManageWalletTypesModal = false">
+            <div
+                v-if="showManageWalletTypesModal"
+                class="transaction-modal-overlay"
+                @click.self="showManageWalletTypesModal = false"
+            >
                 <div class="transaction-modal">
                     <div class="transaction-modal-header">
-                        <h3 class="transaction-modal-title">Kelola Jenis Dompet</h3>
-                        <button @click="showManageWalletTypesModal = false" class="transaction-modal-close">
+                        <h3 class="transaction-modal-title">
+                            Kelola Jenis Dompet
+                        </h3>
+                        <button
+                            @click="showManageWalletTypesModal = false"
+                            class="transaction-modal-close"
+                        >
                             <X class="h-5 w-5" />
                         </button>
                     </div>
 
                     <!-- Create New Wallet Type Form -->
-                    <form @submit.prevent="submitWalletType" class="mb-6 pb-6 border-b border-gray-200 dark:border-gray-700 flex gap-2 items-end">
+                    <form
+                        @submit.prevent="submitWalletType"
+                        class="mb-6 flex items-end gap-2 border-b border-gray-200 pb-6 dark:border-gray-700"
+                    >
                         <div class="flex-1 space-y-1">
-                            <label class="text-xs font-bold text-gray-500">Emoji Icon</label>
-                            <input v-model="walletTypeForm.icon" type="text" class="transaction-form-input text-center" placeholder="🏦" style="padding: 0; width: 46px;" required />
+                            <label class="text-xs font-bold text-gray-500"
+                                >Emoji Icon</label
+                            >
+                            <input
+                                v-model="walletTypeForm.icon"
+                                type="text"
+                                class="transaction-form-input text-center"
+                                placeholder="🏦"
+                                style="padding: 0; width: 46px"
+                                required
+                            />
                         </div>
                         <div class="flex-[3] space-y-1">
-                            <label class="text-xs font-bold text-gray-500">Nama Jenis Dompet</label>
-                            <input v-model="walletTypeForm.name" type="text" class="transaction-form-input" placeholder="e.g. Gopay, Bank Mandiri" required />
+                            <label class="text-xs font-bold text-gray-500"
+                                >Nama Jenis Dompet</label
+                            >
+                            <input
+                                v-model="walletTypeForm.name"
+                                type="text"
+                                class="transaction-form-input"
+                                placeholder="e.g. Gopay, Bank Mandiri"
+                                required
+                            />
                         </div>
-                        <button type="submit" :disabled="walletTypeForm.processing" class="transaction-form-submit px-4 h-[46px] text-sm">
+                        <button
+                            type="submit"
+                            :disabled="walletTypeForm.processing"
+                            class="transaction-form-submit h-[46px] px-4 text-sm"
+                        >
                             Tambah
                         </button>
                     </form>
 
                     <!-- Wallet Types List -->
-                    <div class="space-y-2 max-h-64 overflow-y-auto pr-1" style="scrollbar-width: none;">
-                        <div v-for="type in walletTypes" :key="type.id" class="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800/50 rounded-xl border border-gray-200 dark:border-gray-700">
+                    <div
+                        class="max-h-64 space-y-2 overflow-y-auto pr-1"
+                        style="scrollbar-width: none"
+                    >
+                        <div
+                            v-for="type in walletTypes"
+                            :key="type.id"
+                            class="flex items-center justify-between rounded-xl border border-gray-200 bg-gray-50 p-3 dark:border-gray-700 dark:bg-gray-800/50"
+                        >
                             <div class="flex items-center gap-3">
                                 <span class="text-xl">{{ type.icon }}</span>
-                                <span class="font-bold text-sm text-gray-900 dark:text-white">{{ type.name }}</span>
+                                <span
+                                    class="text-sm font-bold text-gray-900 dark:text-white"
+                                    >{{ type.name }}</span
+                                >
                             </div>
-                            <button @click="deleteWalletType(type)" class="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-xl transition">
+                            <button
+                                @click="deleteWalletType(type)"
+                                class="rounded-xl p-2 text-red-500 transition hover:bg-red-50 dark:hover:bg-red-950/30"
+                            >
                                 <Trash2 class="h-4 w-4" />
                             </button>
                         </div>
@@ -1325,25 +2012,34 @@ onMounted(() => {
 
         <!-- Attractive Custom Confirm Modal -->
         <Teleport to="body">
-            <div v-if="confirmModal.show" class="transaction-modal-overlay" @click.self="confirmModal.show = false" style="z-index: 300;">
+            <div
+                v-if="confirmModal.show"
+                class="transaction-modal-overlay"
+                @click.self="confirmModal.show = false"
+                style="z-index: 300"
+            >
                 <div class="transaction-modal max-w-sm text-center">
-                    <div class="text-5xl mb-4 animate-bounce">⚠️</div>
-                    <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-2">
+                    <div class="mb-4 animate-bounce text-5xl">⚠️</div>
+                    <h3
+                        class="mb-2 text-lg font-bold text-gray-900 dark:text-white"
+                    >
                         {{ confirmModal.title }}
                     </h3>
-                    <p class="text-sm text-gray-500 dark:text-gray-400 mb-6 px-2">
+                    <p
+                        class="mb-6 px-2 text-sm text-gray-500 dark:text-gray-400"
+                    >
                         {{ confirmModal.message }}
                     </p>
                     <div class="flex gap-3">
                         <button
                             @click="executeConfirm"
-                            class="flex-1 bg-red-500 hover:bg-red-600 text-white font-bold py-2.5 rounded-xl transition"
+                            class="flex-1 rounded-xl bg-red-500 py-2.5 font-bold text-white transition hover:bg-red-600"
                         >
                             Ya, Hapus
                         </button>
                         <button
                             @click="confirmModal.show = false"
-                            class="flex-1 bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded-xl font-medium transition hover:bg-gray-300"
+                            class="flex-1 rounded-xl bg-gray-200 font-medium text-gray-600 transition hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-300"
                         >
                             Batal
                         </button>
@@ -1387,7 +2083,13 @@ onMounted(() => {
 .balance-hero-bg {
     position: absolute;
     inset: 0;
-    background: linear-gradient(135deg, #064e3b 0%, #065f46 40%, #047857 70%, #059669 100%);
+    background: linear-gradient(
+        135deg,
+        #064e3b 0%,
+        #065f46 40%,
+        #047857 70%,
+        #059669 100%
+    );
 }
 
 .balance-hero-orb {
@@ -1562,22 +2264,38 @@ onMounted(() => {
 }
 
 :is(.dark) .quick-action-icon--income {
-    background: linear-gradient(135deg, rgba(6, 95, 70, 0.3), rgba(4, 120, 87, 0.2));
+    background: linear-gradient(
+        135deg,
+        rgba(6, 95, 70, 0.3),
+        rgba(4, 120, 87, 0.2)
+    );
     color: #6ee7b7;
 }
 
 :is(.dark) .quick-action-icon--expense {
-    background: linear-gradient(135deg, rgba(159, 18, 57, 0.3), rgba(190, 18, 60, 0.2));
+    background: linear-gradient(
+        135deg,
+        rgba(159, 18, 57, 0.3),
+        rgba(190, 18, 60, 0.2)
+    );
     color: #fda4af;
 }
 
 :is(.dark) .quick-action-icon--transfer {
-    background: linear-gradient(135deg, rgba(91, 33, 182, 0.3), rgba(124, 58, 237, 0.2));
+    background: linear-gradient(
+        135deg,
+        rgba(91, 33, 182, 0.3),
+        rgba(124, 58, 237, 0.2)
+    );
     color: #c4b5fd;
 }
 
 :is(.dark) .quick-action-icon--history {
-    background: linear-gradient(135deg, rgba(3, 105, 161, 0.3), rgba(2, 132, 199, 0.2));
+    background: linear-gradient(
+        135deg,
+        rgba(3, 105, 161, 0.3),
+        rgba(2, 132, 199, 0.2)
+    );
     color: #7dd3fc;
 }
 
@@ -1847,31 +2565,175 @@ onMounted(() => {
 }
 
 /* ─── Budget Overview ─── */
-.budget-overview-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-@media (max-width: 400px) { .budget-overview-grid { grid-template-columns: 1fr; } }
-.budget-mini-card { padding: 14px; background: var(--card); border: 1px solid var(--border); border-radius: 16px; }
-.budget-mini-top { display: flex; align-items: center; gap: 6px; margin-bottom: 8px; }
-.budget-mini-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
-.budget-mini-name { font-size: 12px; font-weight: 700; color: var(--foreground); flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.budget-mini-pct { font-size: 11px; font-weight: 700; flex-shrink: 0; }
-.budget-mini-bar { height: 5px; background: var(--accent); border-radius: 3px; overflow: hidden; margin-bottom: 6px; }
-.budget-mini-bar-fill { height: 100%; border-radius: 3px; transition: width 0.5s ease; }
-.budget-mini-bottom { display: flex; justify-content: space-between; font-size: 10px; color: var(--muted-foreground); font-weight: 600; }
+.budget-overview-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+@media (max-width: 400px) {
+    .budget-overview-grid {
+        grid-template-columns: 1fr;
+    }
+}
+.budget-mini-card {
+    padding: 14px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+}
+.budget-mini-top {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 8px;
+}
+.budget-mini-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+.budget-mini-name {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--foreground);
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.budget-mini-pct {
+    font-size: 11px;
+    font-weight: 700;
+    flex-shrink: 0;
+}
+.budget-mini-bar {
+    height: 5px;
+    background: var(--accent);
+    border-radius: 3px;
+    overflow: hidden;
+    margin-bottom: 6px;
+}
+.budget-mini-bar-fill {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 0.5s ease;
+}
+.budget-mini-bottom {
+    display: flex;
+    justify-content: space-between;
+    font-size: 10px;
+    color: var(--muted-foreground);
+    font-weight: 600;
+}
 /* ─── Transaction Modal ─── */
-.transaction-modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); display: flex; align-items: flex-end; justify-content: center; z-index: 200; padding: 16px; }
-@media (min-width: 640px) { .transaction-modal-overlay { align-items: center; } }
-.transaction-modal { background: var(--card); border-radius: 24px 24px 16px 16px; width: 100%; max-width: 440px; padding: 24px; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); }
-@media (min-width: 640px) { .transaction-modal { border-radius: 24px; } }
-.transaction-modal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
-.transaction-modal-title { font-size: 18px; font-weight: 700; color: var(--foreground); }
-.transaction-modal-close { width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; border-radius: 10px; border: none; background: var(--accent); color: var(--muted-foreground); cursor: pointer; }
-.transaction-modal-form { display: flex; flex-direction: column; gap: 16px; }
-.transaction-form-group { display: flex; flex-direction: column; gap: 6px; }
-.transaction-form-label { font-size: 13px; font-weight: 600; color: var(--foreground); }
-.transaction-form-input { height: 46px; padding: 0 14px; border: 1px solid var(--border); border-radius: 14px; font-size: 14px; background: var(--background); color: var(--foreground); outline: none; transition: border-color 0.2s; }
-.transaction-form-input:focus { border-color: #059669; box-shadow: 0 0 0 3px rgba(5,150,105,0.1); }
-.transaction-form-error { font-size: 12px; color: #ef4444; }
-.transaction-form-submit { height: 48px; border-radius: 14px; font-size: 15px; font-weight: 600; color: white; background: linear-gradient(135deg, #064e3b, #059669); border: none; cursor: pointer; box-shadow: 0 4px 14px rgba(5,150,105,0.25); transition: all 0.2s; }
-.transaction-form-submit:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(5,150,105,0.35); }
-.transaction-form-submit:disabled { opacity: 0.6; }
+.transaction-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    z-index: 200;
+    padding: 16px;
+}
+@media (min-width: 640px) {
+    .transaction-modal-overlay {
+        align-items: center;
+    }
+}
+.transaction-modal {
+    background: var(--card);
+    border-radius: 24px 24px 16px 16px;
+    width: 100%;
+    max-width: 440px;
+    padding: 24px;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow:
+        0 20px 25px -5px rgba(0, 0, 0, 0.1),
+        0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+@media (min-width: 640px) {
+    .transaction-modal {
+        border-radius: 24px;
+    }
+}
+.transaction-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+}
+.transaction-modal-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--foreground);
+}
+.transaction-modal-close {
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 10px;
+    border: none;
+    background: var(--accent);
+    color: var(--muted-foreground);
+    cursor: pointer;
+}
+.transaction-modal-form {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+.transaction-form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+.transaction-form-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--foreground);
+}
+.transaction-form-input {
+    height: 46px;
+    padding: 0 14px;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    font-size: 14px;
+    background: var(--background);
+    color: var(--foreground);
+    outline: none;
+    transition: border-color 0.2s;
+}
+.transaction-form-input:focus {
+    border-color: #059669;
+    box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.1);
+}
+.transaction-form-error {
+    font-size: 12px;
+    color: #ef4444;
+}
+.transaction-form-submit {
+    height: 48px;
+    border-radius: 14px;
+    font-size: 15px;
+    font-weight: 600;
+    color: white;
+    background: linear-gradient(135deg, #064e3b, #059669);
+    border: none;
+    cursor: pointer;
+    box-shadow: 0 4px 14px rgba(5, 150, 105, 0.25);
+    transition: all 0.2s;
+}
+.transaction-form-submit:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(5, 150, 105, 0.35);
+}
+.transaction-form-submit:disabled {
+    opacity: 0.6;
+}
 </style>

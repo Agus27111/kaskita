@@ -16,8 +16,8 @@ class EnsureHasFamily
     {
         if (
             $request->user() &&
-            !$request->user()->family_id &&
-            !$request->routeIs('family.setup', 'family.store', 'family.accept-invitation')
+            ! $request->user()->family_id &&
+            ! $request->routeIs('family.setup', 'family.store', 'family.accept-invitation')
         ) {
             return redirect()->route('family.setup');
         }
