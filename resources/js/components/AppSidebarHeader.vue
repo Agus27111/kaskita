@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { usePage } from '@inertiajs/vue3';
-import { Bell } from 'lucide-vue-next';
-import { computed } from 'vue';
+import { router, usePage } from '@inertiajs/vue3';
+import { Bell, Inbox, Trash2 } from 'lucide-vue-next';
+import { computed, ref } from 'vue';
 import Breadcrumbs from '@/components/Breadcrumbs.vue';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -13,7 +13,7 @@ import {
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import UserMenuContent from '@/components/UserMenuContent.vue';
 import { getInitials } from '@/composables/useInitials';
-import type { BreadcrumbItem } from '@/types';
+import type { AppNotifications, BreadcrumbItem } from '@/types';
 
 withDefaults(
     defineProps<{
@@ -26,6 +26,25 @@ withDefaults(
 
 const page = usePage();
 const auth = computed(() => page.props.auth);
+const isClearingNotifications = ref(false);
+const emptyNotifications: AppNotifications = {
+    items: [],
+    count: 0,
+};
+
+const notifications = computed(
+    () => page.props.notifications ?? emptyNotifications,
+);
+
+const notificationItems = computed(() => notifications.value.items);
+const notificationCount = computed(() => notifications.value.count);
+const hasNotifications = computed(() => notificationCount.value > 0);
+const notificationBadge = computed(() =>
+    notificationCount.value > 9 ? '9+' : String(notificationCount.value),
+);
+const notificationCountLabel = computed(
+    () => `${notificationCount.value} Notif`,
+);
 
 const greeting = computed(() => {
     const hour = new Date().getHours();
@@ -50,6 +69,22 @@ const firstName = computed(() => {
 
     return name.split(' ')[0];
 });
+
+const clearNotifications = () => {
+    if (!hasNotifications.value || isClearingNotifications.value) {
+        return;
+    }
+
+    router.delete('/notifications', {
+        preserveScroll: true,
+        onStart: () => {
+            isClearingNotifications.value = true;
+        },
+        onFinish: () => {
+            isClearingNotifications.value = false;
+        },
+    });
+};
 </script>
 
 <template>
@@ -83,10 +118,17 @@ const firstName = computed(() => {
                 <DropdownMenu>
                     <DropdownMenuTrigger :as-child="true">
                         <button
+                            type="button"
+                            aria-label="Notifikasi"
                             class="app-header-notif-btn outline-none focus:outline-none"
                         >
                             <Bell class="h-5 w-5" />
-                            <span class="app-header-notif-dot"></span>
+                            <span
+                                v-if="hasNotifications"
+                                class="app-header-notif-dot"
+                            >
+                                {{ notificationBadge }}
+                            </span>
                         </button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent
@@ -102,150 +144,73 @@ const firstName = computed(() => {
                                 Notifikasi Keluarga
                             </h4>
                             <span
+                                v-if="hasNotifications"
                                 class="rounded-full bg-rose-500/10 px-2.5 py-0.5 text-[9px] font-bold text-rose-600"
-                                >4 Notif</span
+                                >{{ notificationCountLabel }}</span
                             >
                         </div>
 
-                        <div class="max-h-[350px] space-y-3 overflow-y-auto">
-                            <!-- Daily Charity (Sedekah) Reminder -->
+                        <div
+                            v-if="notificationItems.length > 0"
+                            class="max-h-[350px] space-y-2 overflow-y-auto"
+                        >
                             <div
-                                class="group relative flex gap-3 overflow-hidden rounded-2xl border border-violet-500/20 bg-violet-500/10 p-3 transition hover:bg-violet-500/15"
-                            >
-                                <div
-                                    class="pointer-events-none absolute -right-4 -bottom-4 h-12 w-12 rounded-full bg-violet-500/10 blur-xl transition group-hover:scale-125"
-                                ></div>
-                                <div
-                                    class="flex h-8 w-8 shrink-0 animate-pulse items-center justify-center rounded-lg bg-violet-500/20 text-xs font-bold text-violet-600 dark:text-violet-400"
-                                >
-                                    🕌
-                                </div>
-                                <div
-                                    class="relative z-10 flex-1 space-y-1 text-left"
-                                >
-                                    <div class="flex items-center gap-1.5">
-                                        <p
-                                            class="text-xs font-black text-violet-700 dark:text-violet-400"
-                                        >
-                                            Pengingat Sedekah Harian
-                                        </p>
-                                        <span
-                                            class="py-0.2 rounded-md bg-violet-500 px-1 text-[7px] font-extrabold tracking-wider text-white uppercase"
-                                            >Berkah</span
-                                        >
-                                    </div>
-                                    <p
-                                        class="text-[10px] leading-relaxed font-extrabold text-gray-700 italic dark:text-gray-300"
-                                    >
-                                        "Sedekah itu tidak akan mengurangi
-                                        harta." (HR. Muslim)
-                                    </p>
-                                    <p
-                                        class="mt-1 text-[9px] leading-relaxed font-medium text-gray-500 dark:text-gray-400"
-                                    >
-                                        Yuk, raih keberkahan finansial keluarga
-                                        hari ini dengan berbagi kepada sesama.
-                                    </p>
-                                    <p
-                                        class="text-[8px] font-bold text-violet-500 dark:text-violet-400"
-                                    >
-                                        Setiap Hari ✨
-                                    </p>
-                                </div>
-                            </div>
-
-                            <!-- Notif 1 -->
-                            <div
+                                v-for="notification in notificationItems"
+                                :key="notification.id"
                                 class="flex gap-3 rounded-xl p-2 transition hover:bg-gray-50 dark:hover:bg-zinc-800/40"
                             >
                                 <div
-                                    class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-amber-500/10 text-xs font-bold text-amber-600 dark:text-amber-400"
+                                    class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
                                 >
-                                    ⚠️
+                                    <Bell class="h-4 w-4" />
                                 </div>
-                                <div class="flex-1 space-y-0.5 text-left">
+                                <div class="min-w-0 flex-1 space-y-1 text-left">
                                     <p
-                                        class="text-xs font-black text-gray-900 dark:text-white"
+                                        class="text-xs leading-relaxed font-bold break-words text-gray-900 dark:text-white"
                                     >
-                                        Batas Anggaran Kritis!
+                                        {{ notification.message }}
                                     </p>
                                     <p
-                                        class="text-[10px] leading-relaxed font-medium text-gray-500 dark:text-gray-400"
+                                        class="text-[9px] font-bold text-gray-400 dark:text-zinc-500"
                                     >
-                                        Kategori <strong>Makanan</strong> Anda
-                                        telah mencapai 75% pemakaian batas
-                                        bulanan.
-                                    </p>
-                                    <p
-                                        class="text-[8px] font-bold text-gray-400 dark:text-zinc-500"
-                                    >
-                                        1 jam yang lalu
-                                    </p>
-                                </div>
-                            </div>
-
-                            <!-- Notif 2 -->
-                            <div
-                                class="flex gap-3 rounded-xl p-2 transition hover:bg-gray-50 dark:hover:bg-zinc-800/40"
-                            >
-                                <div
-                                    class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-emerald-500/10 text-xs font-bold text-emerald-600 dark:text-emerald-400"
-                                >
-                                    📈
-                                </div>
-                                <div class="flex-1 space-y-0.5 text-left">
-                                    <p
-                                        class="text-xs font-black text-gray-900 dark:text-white"
-                                    >
-                                        Rasio Arus Kas Bulanan
-                                    </p>
-                                    <p
-                                        class="text-[10px] leading-relaxed font-medium text-gray-500 dark:text-gray-400"
-                                    >
-                                        Kondisi keuangan keluarga Anda saat ini
-                                        berkategori
-                                        <strong>Cukup Sehat</strong> (62%
-                                        terpakai).
-                                    </p>
-                                    <p
-                                        class="text-[8px] font-bold text-gray-400 dark:text-zinc-500"
-                                    >
-                                        5 jam yang lalu
-                                    </p>
-                                </div>
-                            </div>
-
-                            <!-- Notif 3 -->
-                            <div
-                                class="flex gap-3 rounded-xl p-2 transition hover:bg-gray-50 dark:hover:bg-zinc-800/40"
-                            >
-                                <div
-                                    class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-indigo-500/10 text-xs font-bold text-indigo-600 dark:text-indigo-400"
-                                >
-                                    💰
-                                </div>
-                                <div class="flex-1 space-y-0.5 text-left">
-                                    <p
-                                        class="text-xs font-black text-gray-900 dark:text-white"
-                                    >
-                                        Pemasukan Terdaftar
-                                    </p>
-                                    <p
-                                        class="text-[10px] leading-relaxed font-medium text-gray-500 dark:text-gray-400"
-                                    >
-                                        Pemasukan sebesar
-                                        <strong>Rp 15.000.000</strong> berhasil
-                                        ditambahkan ke Dompet Utama oleh
-                                        keluarga.
-                                    </p>
-                                    <p
-                                        class="text-[8px] font-bold text-gray-400 dark:text-zinc-500"
-                                    >
-                                        1 hari yang lalu
+                                        {{ notification.sent_at_human }}
                                     </p>
                                 </div>
                             </div>
                         </div>
+
+                        <div
+                            v-else
+                            class="flex flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-gray-200 px-4 py-8 text-center dark:border-zinc-800"
+                        >
+                            <div
+                                class="flex h-9 w-9 items-center justify-center rounded-lg bg-gray-100 text-gray-500 dark:bg-zinc-800 dark:text-zinc-400"
+                            >
+                                <Inbox class="h-4 w-4" />
+                            </div>
+                            <p
+                                class="text-xs font-bold text-gray-500 dark:text-zinc-400"
+                            >
+                                Belum ada notifikasi
+                            </p>
+                        </div>
+
+                        <button
+                            v-if="hasNotifications"
+                            type="button"
+                            :disabled="isClearingNotifications"
+                            class="flex w-full items-center justify-center gap-2 rounded-xl border border-rose-500/20 bg-rose-500/10 px-3 py-2 text-xs font-black text-rose-600 transition hover:bg-rose-500/15 disabled:cursor-not-allowed disabled:opacity-60 dark:text-rose-400"
+                            @click="clearNotifications"
+                        >
+                            <Trash2 class="h-4 w-4" />
+                            <span>
+                                {{
+                                    isClearingNotifications
+                                        ? 'Membersihkan...'
+                                        : 'Bersihkan notifikasi'
+                                }}
+                            </span>
+                        </button>
                     </DropdownMenuContent>
                 </DropdownMenu>
 
@@ -372,13 +337,21 @@ const firstName = computed(() => {
 
 .app-header-notif-dot {
     position: absolute;
-    top: 10px;
-    right: 10px;
-    width: 7px;
-    height: 7px;
-    border-radius: 50%;
+    top: 5px;
+    right: 5px;
+    display: flex;
+    min-width: 16px;
+    height: 16px;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999px;
     background: #ef4444;
     border: 2px solid white;
+    padding: 0 3px;
+    color: white;
+    font-size: 9px;
+    font-weight: 800;
+    line-height: 1;
 }
 
 :is(.dark) .app-header-notif-dot {

@@ -6,6 +6,7 @@ use App\Http\Controllers\BudgetController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\FamilyController;
+use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\TransactionController;
 use App\Http\Controllers\WalletController;
 use App\Http\Controllers\WalletTypeController;
@@ -44,6 +45,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
         // Transactions (Transaksi Baru)
         Route::post('transactions', [TransactionController::class, 'store'])->name('transactions.store');
         Route::post('transactions/parse-voice', [TransactionController::class, 'parseVoice'])->name('transactions.parse-voice');
+
+        // Notifications
+        Route::delete('notifications', [NotificationController::class, 'clear'])->name('notifications.clear');
 
         // Wallets (Kelola Dompet)
         Route::post('wallets', [WalletController::class, 'store'])->name('wallets.store');

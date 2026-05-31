@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\NotificationLog;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -47,7 +48,51 @@ class HandleInertiaRequests extends Middleware
                 'error' => $request->session()->get('error'),
                 'info' => $request->session()->get('info'),
             ],
+            'notifications' => fn () => $this->notificationsFor($request),
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
+        ];
+    }
+
+    /**
+     * @return array{items: array<int, array{id: int, message: string, sent_at: string|null, sent_at_human: string}>, count: int}
+     */
+    private function notificationsFor(Request $request): array
+    {
+        $user = $request->user();
+
+        if (! $user?->family_id) {
+            return [
+                'items' => [],
+                'count' => 0,
+            ];
+        }
+
+        $query = NotificationLog::query()
+            ->where('family_id', $user->family_id)
+            ->where('channel', 'system')
+            ->where('status', 'sent');
+
+        $items = (clone $query)
+            ->latest('sent_at')
+            ->latest()
+            ->limit(8)
+            ->get(['id', 'message', 'sent_at', 'created_at'])
+            ->map(function (NotificationLog $notification) {
+                $sentAt = $notification->sent_at ?? $notification->created_at;
+
+                return [
+                    'id' => $notification->id,
+                    'message' => $notification->message,
+                    'sent_at' => $sentAt?->toISOString(),
+                    'sent_at_human' => $sentAt?->diffForHumans() ?? 'Baru saja',
+                ];
+            })
+            ->values()
+            ->all();
+
+        return [
+            'items' => $items,
+            'count' => (clone $query)->count(),
         ];
     }
 }
