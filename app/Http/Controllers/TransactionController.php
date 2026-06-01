@@ -113,4 +113,18 @@ class TransactionController extends Controller
 
         return response()->json($result);
     }
+
+    /**
+     * Delete a transaction from the family activity history.
+     */
+    public function destroy(Request $request, Transaction $transaction)
+    {
+        if ((int) $transaction->family_id !== (int) $request->user()->family_id) {
+            abort(403);
+        }
+
+        $transaction->delete();
+
+        return back()->with('success', 'Riwayat transaksi berhasil dihapus.');
+    }
 }

@@ -45,6 +45,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         // Transactions (Transaksi Baru)
         Route::post('transactions', [TransactionController::class, 'store'])->name('transactions.store');
         Route::post('transactions/parse-voice', [TransactionController::class, 'parseVoice'])->name('transactions.parse-voice');
+        Route::delete('transactions/{transaction}', [TransactionController::class, 'destroy'])->name('transactions.destroy');
 
         // Notifications
         Route::delete('notifications', [NotificationController::class, 'clear'])->name('notifications.clear');

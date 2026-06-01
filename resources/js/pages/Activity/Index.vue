@@ -12,6 +12,7 @@ import {
     X,
     ArrowLeftRight,
     Download,
+    Trash2,
 } from 'lucide-vue-next';
 import { ref, watch, computed } from 'vue';
 import AppLayout from '@/layouts/AppLayout.vue';
@@ -79,6 +80,7 @@ const filterUser = ref(props.filters.user_id || '');
 const filterMonth = ref(props.filters.month || '');
 const filterYear = ref(props.filters.year || '');
 const isDownloading = ref(false);
+const deletingTransactionId = ref<number | null>(null);
 
 const formatCurrency = (v: number) =>
     new Intl.NumberFormat('id-ID', {
@@ -170,6 +172,25 @@ const downloadPdf = () => {
     setTimeout(() => {
         isDownloading.value = false;
     }, 3000);
+};
+
+const deleteTransaction = (item: TransactionItem) => {
+    if (
+        !window.confirm(
+            `Hapus riwayat ${item.note || item.category?.name || 'transaksi'}? Saldo dompet akan disesuaikan kembali.`,
+        )
+    ) {
+        return;
+    }
+
+    deletingTransactionId.value = item.id;
+
+    router.delete(`/transactions/${item.id}`, {
+        preserveScroll: true,
+        onFinish: () => {
+            deletingTransactionId.value = null;
+        },
+    });
 };
 </script>
 
@@ -420,6 +441,23 @@ const downloadPdf = () => {
                                         }}
                                     </span>
                                 </div>
+
+                                <button
+                                    type="button"
+                                    class="delete-transaction-btn"
+                                    :disabled="
+                                        deletingTransactionId === item.id
+                                    "
+                                    title="Hapus transaksi"
+                                    aria-label="Hapus transaksi"
+                                    @click="deleteTransaction(item)"
+                                >
+                                    <RefreshCw
+                                        v-if="deletingTransactionId === item.id"
+                                        class="h-3.5 w-3.5 animate-spin"
+                                    />
+                                    <Trash2 v-else class="h-3.5 w-3.5" />
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -759,6 +797,27 @@ const downloadPdf = () => {
     font-size: 11px;
     font-weight: 700;
     color: var(--foreground);
+}
+.delete-transaction-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
+    border: 1px solid rgba(239, 68, 68, 0.18);
+    background: rgba(239, 68, 68, 0.08);
+    color: #ef4444;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.delete-transaction-btn:hover:not(:disabled) {
+    background: rgba(239, 68, 68, 0.14);
+    transform: translateY(-1px);
+}
+.delete-transaction-btn:disabled {
+    cursor: not-allowed;
+    opacity: 0.7;
 }
 
 /* Pagination */
