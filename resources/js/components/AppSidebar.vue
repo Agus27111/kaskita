@@ -37,7 +37,7 @@ const mainNavItems: NavItem[] = [
     },
     {
         title: 'Dompet',
-        href: '#',
+        href: dashboard({ query: { action: 'wallet' } }),
         icon: Wallet,
     },
     {

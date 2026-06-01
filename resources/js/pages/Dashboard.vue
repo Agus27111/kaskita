@@ -592,6 +592,11 @@ onMounted(() => {
             const url = new URL(window.location.href);
             url.searchParams.delete('action');
             window.history.replaceState({}, '', url);
+        } else if (action === 'wallet') {
+            openWalletModal();
+            const url = new URL(window.location.href);
+            url.searchParams.delete('action');
+            window.history.replaceState({}, '', url);
         }
     }
 });

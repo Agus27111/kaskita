@@ -46,7 +46,7 @@ const rightItems = [
 </script>
 
 <template>
-    <nav class="bottom-nav-wrapper lg:hidden">
+    <nav class="bottom-nav-wrapper md:hidden">
         <div class="bottom-nav-container">
             <!-- Left items -->
             <Link
@@ -96,7 +96,7 @@ const rightItems = [
     <Teleport to="body">
         <div
             v-if="showQuickMenu"
-            class="fixed inset-0 z-45 flex flex-col justify-end bg-black/40 p-6 backdrop-blur-md transition duration-300 ease-out dark:bg-black/60"
+            class="bottom-nav-overlay fixed inset-0 z-45 flex flex-col justify-end bg-black/40 p-6 backdrop-blur-md transition duration-300 ease-out md:hidden dark:bg-black/60"
             @click.self="showQuickMenu = false"
         >
             <div
@@ -210,6 +210,12 @@ const rightItems = [
     pointer-events: none;
 }
 
+@media (min-width: 768px) {
+    .bottom-nav-wrapper {
+        display: none !important;
+    }
+}
+
 /* ─── Pill container ─── */
 .bottom-nav-container {
     display: flex;
@@ -237,6 +243,16 @@ const rightItems = [
         0 8px 32px rgba(0, 0, 0, 0.3),
         0 2px 8px rgba(0, 0, 0, 0.2),
         inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+.bottom-nav-overlay {
+    display: flex;
+}
+
+@media (min-width: 768px) {
+    .bottom-nav-overlay {
+        display: none !important;
+    }
 }
 
 /* ─── Nav item (regular) ─── */
