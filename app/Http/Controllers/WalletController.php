@@ -47,7 +47,7 @@ class WalletController extends Controller
         // Keep at least one active wallet
         $activeCount = Wallet::where('family_id', $family->id)->where('is_active', true)->count();
         if ($activeCount <= 1) {
-            return back()->withErrors(['wallet' => 'Keluarga Anda harus memiliki minimal satu dompet aktif.']);
+            return back()->with('error', 'Keluarga Anda harus memiliki minimal satu dompet aktif.');
         }
 
         $wallet->delete();
