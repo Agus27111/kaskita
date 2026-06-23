@@ -202,11 +202,11 @@ const rightItems = [
     margin: 0 auto;
     width: 100%;
     max-width: 450px;
-    z-index: 100;
+    z-index: 999;
     display: flex;
     justify-content: center;
     padding: 0 16px;
-    padding-bottom: env(safe-area-inset-bottom, 12px);
+    padding-bottom: calc(env(safe-area-inset-bottom) + 12px);
     pointer-events: none;
 }
 
